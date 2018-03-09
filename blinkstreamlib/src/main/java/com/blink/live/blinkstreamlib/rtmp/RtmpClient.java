@@ -4,9 +4,10 @@ package com.blink.live.blinkstreamlib.rtmp;
  * <pre>
  *     author : wangmingxing
  *     time   : 2018/3/9
- *     desc   :
+ *     desc   : rtmp工具包类
  * </pre>
  */
+@SuppressWarnings("all")
 public class RtmpClient {
     static {
         System.loadLibrary("resrtmp");

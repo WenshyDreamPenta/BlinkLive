@@ -2,7 +2,13 @@ package com.blink.live.blinkstreamlib.render;
 
 import android.graphics.SurfaceTexture;
 
-
+/**
+ * <pre>
+ *     author : wangmingxing
+ *     time   : 2018/3/9
+ *     desc   :
+ * </pre>
+ */
 public class GLESRender implements IRender {
     @Override
     public void create(SurfaceTexture visualSurfaceTexture, int pixelFormat, int pixelWidth,
