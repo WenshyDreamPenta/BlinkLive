@@ -29,6 +29,7 @@ public class FLvMetaData {
         DataSize = 0;
     }
 
+    //init audio video Parameters
     public FLvMetaData(RESCoreParameters coreParameters) {
         this();
         //Audio
