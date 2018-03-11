@@ -5,7 +5,13 @@ import com.blink.live.blinkstreamlib.utils.LogTools;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-
+/**
+ * <pre>
+ *     author : wangmingxing
+ *     time   : 2018/3/11
+ *     desc   : RES核心参数
+ * </pre>
+ */
 public class RESCoreParameters {
     public static final int FILTER_MODE_HARD = 1;
     public static final int FILTER_MODE_SOFT = 2;
@@ -68,13 +74,13 @@ public class RESCoreParameters {
     public RESCoreParameters() {
         done = false;
         printDetailMsg = false;
-        filterMode=-1;
+        filterMode = -1;
         videoWidth = -1;
         videoHeight = -1;
         previewVideoWidth = 1280;
         previewVideoHeight = 720;
-        videoFPS=-1;
-        videoGOP=1;
+        videoFPS = -1;
+        videoGOP = 1;
         previewColorFormat = -1;
         mediacodecAVCColorFormat = -1;
         mediacdoecAVCBitRate = -1;
@@ -110,7 +116,8 @@ public class RESCoreParameters {
                 sb.append('=');
                 sb.append(field.get(this));
                 sb.append(';');
-            } catch (IllegalAccessException e) {
+            }
+            catch (IllegalAccessException e) {
             }
         }
         return sb.toString();

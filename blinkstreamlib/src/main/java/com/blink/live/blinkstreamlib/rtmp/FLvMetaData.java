@@ -6,8 +6,12 @@ import java.util.ArrayList;
 
 
 /**
- * This class is able to generate a FLVTAG in accordance with Adobe Flash Video File Format
- * Specification v10.1 Annex E.5 with limited types available.
+ * <pre>
+ *     author : wangmingxing
+ *     time   : 2018/3/11
+ *     desc   :  This class is able to generate a FLVTAG in accordance with Adobe Flash Video File Format
+ *               Specification v10.1 Annex E.5 with limited types available.
+ * </pre>
  */
 public class FLvMetaData {
     private static final String Name = "onMetaData";

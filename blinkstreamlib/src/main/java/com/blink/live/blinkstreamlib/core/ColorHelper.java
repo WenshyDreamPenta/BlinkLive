@@ -1,6 +1,12 @@
 package com.blink.live.blinkstreamlib.core;
 
-
+/**
+ * <pre>
+ *     author : wangmingxing
+ *     time   : 2018/3/9
+ *     desc   : 颜色工具类
+ * </pre>
+ */
 @SuppressWarnings("all")
 public class ColorHelper {
 
