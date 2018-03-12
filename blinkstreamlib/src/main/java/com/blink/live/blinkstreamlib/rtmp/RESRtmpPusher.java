@@ -1,14 +1,15 @@
 package com.blink.live.blinkstreamlib.rtmp;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-
 import com.blink.live.blinkstreamlib.core.RESByteSpeedometer;
 import com.blink.live.blinkstreamlib.core.RESFrameRateMeter;
 import com.blink.live.blinkstreamlib.core.listeners.RESConnectionListener;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
+import com.blink.live.blinkstreamlib.utils.CallbackDelivery;
 import com.blink.live.blinkstreamlib.utils.LogTools;
 
 /**
@@ -25,7 +26,7 @@ public class RESRtmpPusher implements IWorker {
     public static final int FROM_VIDEO = 6;
     //工作handler线程
     private HandlerThread workHandlerThread;
-    private Handler workerHandler;
+    private WorkHandler workHandler;
     //同步-对象锁
     private final Object syncOp = new Object();
 
@@ -34,44 +35,84 @@ public class RESRtmpPusher implements IWorker {
         synchronized (syncOp) {
             workHandlerThread = new HandlerThread("RESRtmpSender,workHandlerThread");
             workHandlerThread.start();
-            workerHandler = new WorkHandler(coreParameters.senderQueueLength, new FLvMetaTagData
-                    (coreParameters), workHandlerThread.getLooper());
+            workHandler = new WorkHandler(coreParameters.senderQueueLength, new FLvMetaTagData(coreParameters), workHandlerThread
+                    .getLooper());
+        }
+    }
+
+    public void setConnectionListener(RESConnectionListener connectionListener) {
+        synchronized (syncOp) {
+            workHandler.setConnectionListener(connectionListener);
         }
     }
 
     @Override
     public String getServerIpAddr() {
-        return null;
+        synchronized (syncOp) {
+            return workHandler == null ? null : workHandler.getServerIpAddr();
+        }
     }
 
     @Override
     public float getSendFrameRate() {
-        return 0;
+        synchronized (syncOp) {
+            return workHandler == null ? 0 : workHandler.getSendFrameRate();
+        }
     }
 
     @Override
     public float getSendBufferFreePercent() {
-        return 0;
+        synchronized (syncOp) {
+            return workHandler == null ? 0 : workHandler.getSendBufferFreePercent();
+        }
     }
 
     @Override
     public void start(String rtmpAddr) {
-
+        synchronized (syncOp) {
+            workHandler.start(rtmpAddr);
+        }
     }
 
     @Override
     public void stop() {
-
+        synchronized (syncOp) {
+            workHandler.stop();
+        }
     }
 
     @Override
     public void feed(RESFlvData flvData, int type) {
-
+        synchronized (syncOp) {
+            workHandler.feed(flvData, type);
+        }
     }
 
     @Override
     public int getTotalSpeed() {
-        return 0;
+        synchronized (syncOp) {
+            if (workHandler != null) {
+                return workHandler.getTotalSpeed();
+            }
+            else {
+                return 0;
+            }
+        }
+    }
+
+    //返回workHandler
+    public WorkHandler getWorkHandler() {
+        return workHandler;
+    }
+
+    public void destroy() {
+        synchronized (syncOp) {
+            workHandler.removeCallbacksAndMessages(null);
+            workHandler.stop();
+            if (Build.VERSION.SDK_INT > 18) {
+                workHandlerThread.quitSafely();
+            }
+        }
     }
 
     public static class WorkHandler extends Handler implements IWorker {
@@ -108,8 +149,104 @@ public class RESRtmpPusher implements IWorker {
         }
 
         @Override
-        public void handleMessage(Message msg){
+        public void handleMessage(Message msg) {
             //todo: handle msg
+            switch (msg.what) {
+                case MSG_START:
+                    if (state == STATE.RUNNING) {
+                        break;
+                    }
+                    sendFrameRateMeter.reSet();
+                    LogTools.d("RESRtmpSender,WorkHandler,tid=" + Thread.currentThread().getId());
+                    jniRtmpPointer = RtmpClient.open((String) msg.obj, true);
+                    final int openR = jniRtmpPointer == 0 ? 1 : 0;
+                    if (openR == 0) {
+                        serverIpAddr = RtmpClient.getIpAddr(jniRtmpPointer);
+                        LogTools.d("serverIpAddr = " + serverIpAddr);
+                    }
+                    //使用主线程Handler调用回调
+                    synchronized (syncConnectionListener) {
+                        if (connectionListener != null) {
+                            CallbackDelivery.getInstance().post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    connectionListener.onOpenConnectionResult(openR);
+                                }
+                            });
+                        }
+                    }
+                    if (jniRtmpPointer == 0) {
+                        break;
+                    }
+                    else {
+                        byte[] metaData = fLvMetaTagData.getMetaData();
+                        RtmpClient.write(jniRtmpPointer, metaData, metaData.length, RESFlvData.FLV_RTMP_PACKET_TYPE_INFO, 0);
+                        state = STATE.RUNNING;
+                    }
+                    break;
+
+                case MSG_STOP:
+                    if (state == STATE.STOPPED || jniRtmpPointer == 0) {
+                        break;
+                    }
+                    errorTime = 0;
+                    final int closeR = RtmpClient.close(jniRtmpPointer);
+                    serverIpAddr = null;
+                    synchronized (syncConnectionListener) {
+                        if (connectionListener != null) {
+                            CallbackDelivery.getInstance().post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    connectionListener.onCloseConnectionResult(closeR);
+                                }
+                            });
+                        }
+                    }
+                    state = STATE.STOPPED;
+                    break;
+                case MSG_WRITE:
+                    synchronized (syncWriteMsgNum) {
+                        --writeMsgNum;
+                    }
+                    if (state != STATE.RUNNING) {
+                        break;
+                    }
+                    if (mListener != null) {
+                        mListener.getBufferFree(getSendBufferFreePercent());
+                    }
+                    RESFlvData flvData = (RESFlvData) msg.obj;
+                    if (writeMsgNum >= (maxQueueLength * 3 / 4) &&
+                            flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO &&
+                            flvData.droppable) {
+                        LogTools.d("senderQueue is crowded,abandon video");
+                        break;
+                    }
+                    final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
+                    if (res == 0) {
+                        errorTime = 0;
+                        if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
+                            videoByteSpeedometer.gain(flvData.size);
+                            sendFrameRateMeter.count();
+                        }
+                        else {
+                            audioByteSpeedometer.gain(flvData.size);
+                        }
+                    }
+                    else {
+                        ++errorTime;
+                        synchronized (syncConnectionListener) {
+                            if (connectionListener != null) {
+                                CallbackDelivery.getInstance()
+                                        .post(new RESConnectionListener.RESWriteErrorRunable(connectionListener, res));
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+
         }
 
         @Override
@@ -166,7 +303,7 @@ public class RESRtmpPusher implements IWorker {
 
         @Override
         public int getTotalSpeed() {
-            return 0;
+            return getVideoSpeed() + getAudioSpeed();
         }
 
         public int getVideoSpeed() {
@@ -175,6 +312,12 @@ public class RESRtmpPusher implements IWorker {
 
         public int getAudioSpeed() {
             return audioByteSpeedometer.getSpeed();
+        }
+
+        public void setConnectionListener(RESConnectionListener connectionListener) {
+            synchronized (syncConnectionListener) {
+                this.connectionListener = connectionListener;
+            }
         }
 
         public interface BufferFreeListener {
