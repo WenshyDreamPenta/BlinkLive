@@ -9,20 +9,34 @@ import java.util.ArrayList;
  * <pre>
  *     author : wangmingxing
  *     time   : 2018/3/11
- *     desc   :  This class is able to generate a FLVTAG in accordance with Adobe Flash Video File Format
- *               Specification v10.1 Annex E.5 with limited types available.
+ *     desc   :  This class is abel to generate a FLVTAG in accordance with Adobe Flash Video File
+ *     Format Specification v10.1 Annex E.5 with limited types available.
+ *     添加flV Tag 头格式
  * </pre>
  */
 public class FLvMetaData {
+
+    /**
+     * FLV contains header and body
+     * body contanis Tags and previous Tag size.
+     * Tag contanis Header and Data.
+     * Tag type: video/audio/script.
+     * video type: 0x09; audio type: 0x08; script type: 0x12.
+     * Audio Tag Data: 1Byte Audio Parameters: 4bit codecType、2bit sampling rate、1bit
+     * precision、1bit type.
+     * Video Tag Data: 1Byte Video Parameters: 4bit frame type、4bit codecType.
+     * Script Tag Data：控制帧。会放一些关于FLV视频和音频的元数据信息如：duration、width、height等。
+     * 通常该类型Tag会跟在File Header后面作为第一个Tag出现，而且只有一个。
+     */
     private static final String Name = "onMetaData";
-    private static final int ScriptData = 18;
+    private static final int ScriptData = 18; //flv script 类型
     private static final byte[] TS_SID = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     private static final byte[] ObjEndMarker = {0x00, 0x00, 0x09};
     private static final int EmptySize = 21;
-    private ArrayList<byte[]> MetaData;
+    private ArrayList<byte[]> MetaData;//flv meta data
     private int DataSize;
     private int pointer;
-    private byte[] MetaDataFrame;
+    private byte[] MetaDataFrame;//flv 帧数据
 
     public FLvMetaData() {
         MetaData = new ArrayList<>();
@@ -32,8 +46,7 @@ public class FLvMetaData {
     //init audio video Parameters
     public FLvMetaData(RESCoreParameters coreParameters) {
         this();
-        //Audio
-        //AAC
+        //Audio code AAC
         setProperty("audiocodecid", 10);
         switch (coreParameters.mediacodecAACBitRate) {
             case 32 * 1024:
@@ -54,8 +67,7 @@ public class FLvMetaData {
             default:
                 break;
         }
-        //Video
-        //h264
+        //Video - h264(AVC)
         setProperty("videocodecid", 7);
         setProperty("framerate", coreParameters.mediacodecAVCFrameRate);
         setProperty("width", coreParameters.videoWidth);
@@ -70,6 +82,7 @@ public class FLvMetaData {
         addProperty(toFlvString(Key), (byte) 2, toFlvString(value));
     }
 
+    //添加flv属性
     private void addProperty(byte[] Key, byte datatype, byte[] data) {
         int Propertysize = Key.length + 1 + data.length;
         byte[] Property = new byte[Propertysize];
