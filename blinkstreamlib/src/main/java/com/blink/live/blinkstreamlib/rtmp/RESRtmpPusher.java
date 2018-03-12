@@ -25,6 +25,7 @@ public class RESRtmpPusher implements IWorker {
     public static final int FROM_VIDEO = 6;
     //工作handler线程
     private HandlerThread workHandlerThread;
+    private Handler workerHandler;
     //同步-对象锁
     private final Object syncOp = new Object();
 
@@ -33,6 +34,8 @@ public class RESRtmpPusher implements IWorker {
         synchronized (syncOp) {
             workHandlerThread = new HandlerThread("RESRtmpSender,workHandlerThread");
             workHandlerThread.start();
+            workerHandler = new WorkHandler(coreParameters.senderQueueLength, new FLvMetaTagData
+                    (coreParameters), workHandlerThread.getLooper());
         }
     }
 
