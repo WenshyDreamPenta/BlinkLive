@@ -82,7 +82,7 @@ public class FLvMetaTagData {
         addProperty(toFlvString(Key), (byte) 2, toFlvString(value));
     }
 
-    //添加flv属性
+    //添加flv包体字段属性
     private void addProperty(byte[] Key, byte datatype, byte[] data) {
         int Propertysize = Key.length + 1 + data.length;
         byte[] Property = new byte[Propertysize];
@@ -95,6 +95,7 @@ public class FLvMetaTagData {
         DataSize += Propertysize;
     }
 
+    //获取flv元数据 字节数组
     public byte[] getMetaData() {
         MetaDataFrame = new byte[DataSize + EmptySize];
         pointer = 0;
@@ -108,18 +109,22 @@ public class FLvMetaTagData {
             AddbyteArray(Property);
         }
         AddbyteArray(ObjEndMarker);
+
         return MetaDataFrame;
     }
 
+    //添加数据
     private void Addbyte(int value) {
         MetaDataFrame[pointer] = (byte) value;
         pointer++;
     }
 
+    //添加字节数组
     private void AddbyteArray(byte[] value) {
         System.arraycopy(value, 0, MetaDataFrame, pointer, value.length);
         pointer += value.length;
     }
+
 
     private byte[] toFlvString(String text) {
         byte[] FlvString = new byte[text.length() + 2];
