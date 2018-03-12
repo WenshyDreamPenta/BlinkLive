@@ -14,7 +14,7 @@ import java.util.ArrayList;
  *     添加flV Tag 头格式
  * </pre>
  */
-public class FLvMetaData {
+public class FLvMetaTagData {
 
     /**
      * FLV contains header and body
@@ -38,13 +38,13 @@ public class FLvMetaData {
     private int pointer;
     private byte[] MetaDataFrame;//flv 帧数据
 
-    public FLvMetaData() {
+    public FLvMetaTagData() {
         MetaData = new ArrayList<>();
         DataSize = 0;
     }
 
     //init audio video Parameters
-    public FLvMetaData(RESCoreParameters coreParameters) {
+    public FLvMetaTagData(RESCoreParameters coreParameters) {
         this();
         //Audio code AAC
         setProperty("audiocodecid", 10);
