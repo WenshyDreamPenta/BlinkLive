@@ -100,11 +100,7 @@ public class RESRtmpPusher implements IWorker {
         }
     }
 
-    //返回workHandler
-    public WorkHandler getWorkHandler() {
-        return workHandler;
-    }
-
+    //销毁
     public void destroy() {
         synchronized (syncOp) {
             workHandler.removeCallbacksAndMessages(null);
@@ -113,6 +109,11 @@ public class RESRtmpPusher implements IWorker {
                 workHandlerThread.quitSafely();
             }
         }
+    }
+
+    //返回workHandler
+    public WorkHandler getWorkHandler() {
+        return workHandler;
     }
 
     public static class WorkHandler extends Handler implements IWorker {
