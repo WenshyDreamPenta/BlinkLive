@@ -1,9 +1,7 @@
 package com.blink.live.blinkstreamlib.core;
 
 import android.media.MediaFormat;
-
 import com.blink.live.blinkstreamlib.utils.ByteArrayTools;
-
 import java.nio.ByteBuffer;
 
 /**
