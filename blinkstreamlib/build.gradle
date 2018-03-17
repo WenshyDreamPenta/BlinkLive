@@ -1,11 +1,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion rootProject.ext.android.compileSdkVersion
-    buildToolsVersion rootProject.ext.android.buildToolsVersion
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion rootProject.ext.android.targetSdkVersion
+        minSdkVersion 16
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
     }
@@ -26,6 +26,8 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation rootProject.ext.dependencies.appcompatV7
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    compile 'io.reactivex.rxjava2:rxjava:2.1.10'
+    compile 'com.blink:framelibrary:1.0.1'
 }
