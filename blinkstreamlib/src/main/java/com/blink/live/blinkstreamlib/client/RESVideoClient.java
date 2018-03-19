@@ -19,6 +19,7 @@ public class RESVideoClient {
     public SurfaceTexture camTexture;
     private int cameraNum;
     private int curentCameraIndex;
+    private RESVideoCore resVideoCore;
 
 
 }
