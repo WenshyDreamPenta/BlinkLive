@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.client;
+package com.blink.live.blinkstreamlib.core;
 
 import android.graphics.SurfaceTexture;
 

@@ -3,6 +3,7 @@ package com.blink.live.blinkstreamlib.client;
 import android.graphics.Camera;
 import android.graphics.SurfaceTexture;
 
+import com.blink.live.blinkstreamlib.core.RESVideoCore;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 
 /**
