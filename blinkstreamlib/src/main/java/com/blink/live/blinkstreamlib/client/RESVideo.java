@@ -2,6 +2,10 @@ package com.blink.live.blinkstreamlib.client;
 
 import android.graphics.SurfaceTexture;
 
+import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
+import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
+import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
+import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 
