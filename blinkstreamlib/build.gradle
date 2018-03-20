@@ -32,3 +32,4 @@ dependencies {
     implementation 'com.blink:framelibrary:1.0.3'
 
 }
+apply from: "bintrayUpload.gradle"

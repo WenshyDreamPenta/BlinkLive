@@ -25,6 +25,7 @@ public class RESSoftVideoCore implements RESVideoCore{
 
     @Override
     public boolean prepare(RESConfig resConfig) {
+        //todo:
         return false;
     }
 

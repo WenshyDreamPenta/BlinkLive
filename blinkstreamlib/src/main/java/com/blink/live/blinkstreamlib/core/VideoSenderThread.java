@@ -97,10 +97,10 @@ public class VideoSenderThread extends Thread {
     }
 
     private void sendAVCDecoderConfigurationRecord(long tms, MediaFormat format) {
-
+        //todo:
     }
 
     private void sendRealData(long tms, ByteBuffer realData) {
-
+        //todo:
     }
 }

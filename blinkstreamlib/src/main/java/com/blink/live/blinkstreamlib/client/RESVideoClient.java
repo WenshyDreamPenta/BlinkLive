@@ -139,7 +139,7 @@ public class RESVideoClient {
     }
 
     private void prepareVideo(){
-        
+        //todo :
     }
 
 }
