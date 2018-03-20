@@ -9,12 +9,6 @@ import com.blink.framelibrary.eventbus.EventMap;
 public class LiveActivity extends BaseEventActivity {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_live);
-    }
-
-    @Override
     protected void handleEvent(EventMap.BaseEvent event) {
 
     }
@@ -31,7 +25,7 @@ public class LiveActivity extends BaseEventActivity {
 
     @Override
     public int getLayoutId() {
-        return 0;
+        return R.layout.activity_live;
     }
 
     @Override
@@ -51,6 +45,6 @@ public class LiveActivity extends BaseEventActivity {
 
     @Override
     public void initViews() {
-
+        showLoading();
     }
 }
