@@ -8,4 +8,5 @@ package com.blink.live.blinkstreamlib.filter;
  * </pre>
  */
 public class BaseSoftVideoFilter {
+
 }

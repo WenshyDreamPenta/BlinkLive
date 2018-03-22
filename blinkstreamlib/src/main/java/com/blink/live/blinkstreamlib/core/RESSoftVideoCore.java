@@ -2,10 +2,14 @@ package com.blink.live.blinkstreamlib.core;
 
 import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 
 import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
 import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
+import com.blink.live.blinkstreamlib.filter.BaseSoftVideoFilter;
 import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
@@ -29,12 +33,22 @@ public class RESSoftVideoCore implements RESVideoCore{
     private MediaCodec videoEncoder;
 
     private Lock lockVideoFilter = null;
-
+    private BaseSoftVideoFilter videoFilter;
+    private VideoFilterHandler videoFilterHandler;
 
     public RESSoftVideoCore(RESCoreParameters resCoreParameters) {
         this.resCoreParameters = resCoreParameters;
         lockVideoFilter = new ReentrantLock(false);
+        videoFilter = null;
+    }
 
+    @Override
+    public void setCurrentCamera(int camIndex){
+        if(currentCamera != camIndex){
+            synchronized (syncOp){
+
+            }
+        }
     }
 
     @Override
@@ -99,11 +113,6 @@ public class RESSoftVideoCore implements RESVideoCore{
     }
 
     @Override
-    public void setCurrentCamera(int cameraIndex) {
-
-    }
-
-    @Override
     public void takeScreenShot(RESScreenShotListener listener) {
 
     }
@@ -127,5 +136,15 @@ public class RESSoftVideoCore implements RESVideoCore{
     public void setMirror(boolean isEnableMirror, boolean isEnablePreviewMirror,
             boolean isEnableStreamMirror) {
 
+    }
+
+    private class VideoFilterHandler extends Handler {
+        public VideoFilterHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+        }
     }
 }
