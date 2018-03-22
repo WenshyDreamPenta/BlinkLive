@@ -1,6 +1,7 @@
 package com.blink.live.blinkstreamlib.core;
 
 import android.graphics.SurfaceTexture;
+import android.media.MediaCodec;
 
 import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
 import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
@@ -8,6 +9,9 @@ import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
 import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * <pre>
@@ -18,9 +22,19 @@ import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
  */
 public class RESSoftVideoCore implements RESVideoCore{
     private RESCoreParameters resCoreParameters;
+    private final Object syncOp = new Object();
+    private SurfaceTexture cameraTexture;
+
+    private int currentCamera;
+    private MediaCodec videoEncoder;
+
+    private Lock lockVideoFilter = null;
+
 
     public RESSoftVideoCore(RESCoreParameters resCoreParameters) {
         this.resCoreParameters = resCoreParameters;
+        lockVideoFilter = new ReentrantLock(false);
+
     }
 
     @Override
