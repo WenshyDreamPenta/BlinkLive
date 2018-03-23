@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 
 import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
 import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
@@ -154,7 +155,34 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
-        return false;
+        synchronized (syncOp){
+            try {
+                synchronized (syncDstVideoEncoder) {
+                    if (videoEncoder == null) {
+                        //create Encoder
+                        videoEncoder = MediaCodec.createEncoderByType(dstVideoFormat.getString(MediaFormat.KEY_MIME));
+                    }
+                }
+                videoEncoder.configure(dstVideoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                videoEncoder.start();
+                isEncoderStarted = true;
+                videoSenderThread = new VideoSenderThread("VideoSenderThread", videoEncoder, flvDataCollecter);
+                videoSenderThread.start();
+                synchronized (syncIsLooping){
+                    if(!isPreviewing && !isStreaming){
+                        videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_DRAW);
+                        videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock
+                                .uptimeMillis() + loopingInterval), loopingInterval);
+                    }
+                    isStreaming = true;
+                }
+            }
+            catch(Exception e){
+                LogTools.trace("RESVideoClient.start failed", e);
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
