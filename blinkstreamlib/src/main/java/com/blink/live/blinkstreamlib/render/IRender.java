@@ -6,7 +6,7 @@ import android.graphics.SurfaceTexture;
  * <pre>
  *     author : wangmingxing
  *     time   : 2018/3/9
- *     desc   :
+ *     desc   : Render渲染功能接口
  * </pre>
  */
 public interface IRender {

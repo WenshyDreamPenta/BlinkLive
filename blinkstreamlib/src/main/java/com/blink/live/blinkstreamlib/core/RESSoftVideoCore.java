@@ -9,7 +9,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
-
 import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
 import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
@@ -17,10 +16,12 @@ import com.blink.live.blinkstreamlib.filter.BaseSoftVideoFilter;
 import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.model.RESVideoBuff;
+import com.blink.live.blinkstreamlib.render.GLESRender;
+import com.blink.live.blinkstreamlib.render.IRender;
+import com.blink.live.blinkstreamlib.render.NativeRender;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 import com.blink.live.blinkstreamlib.utils.BuffSizeCalculator;
 import com.blink.live.blinkstreamlib.utils.LogTools;
-
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -46,6 +47,9 @@ public class RESSoftVideoCore implements RESVideoCore {
     private BaseSoftVideoFilter videoFilter;
     private VideoFilterHandler videoFilterHandler;
     private HandlerThread videoFilterHandlerThread;
+    //render
+    private final Object syncPreview = new Object();
+    private IRender previewRender;
     //sender
     private VideoSenderThread videoSenderThread;
     //VideoBuffs
@@ -140,22 +144,59 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public void startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
-
+        synchronized (syncPreview){
+            if(previewRender != null){
+                throw new RuntimeException("startPreview without desytroy previous");
+            }
+            switch (resCoreParameters.renderingMode){
+                case RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW:
+                    previewRender = new NativeRender();
+                    break;
+                case RESCoreParameters.RENDERING_MODE_OPENGLES:
+                    previewRender = new GLESRender();
+                    break;
+                default:
+                    throw new RuntimeException("Unknow rendering mode");
+            }
+            previewRender.create(surfaceTexture, resCoreParameters.previewColorFormat, resCoreParameters.videoWidth,
+                    resCoreParameters.videoHeight, visualWidth, visualHeight);
+            synchronized(syncIsLooping){
+                if(!isPreviewing && !isStreaming){
+                    videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_DRAW);
+                    videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
+                }
+                isPreviewing = true;
+            }
+        }
     }
 
     @Override
     public void updatePreview(int visualWidth, int visualHeight) {
-
+        synchronized (syncPreview) {
+            if (previewRender == null) {
+                throw new RuntimeException("updatePreview without startPreview");
+            }
+            previewRender.update(visualWidth, visualHeight);
+        }
     }
 
     @Override
     public void stopPreview(boolean releaseTexture) {
-
+        synchronized (syncPreview){
+            if(previewRender == null){
+                throw new RuntimeException("stopPreview without startPreview");
+            }
+            previewRender.destroy(releaseTexture);
+            previewRender = null;
+            synchronized (syncIsLooping){
+                isPreviewing = false;
+            }
+        }
     }
 
     @Override
     public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
-        synchronized (syncOp){
+        synchronized (syncOp) {
             try {
                 synchronized (syncDstVideoEncoder) {
                     if (videoEncoder == null) {
@@ -168,16 +209,16 @@ public class RESSoftVideoCore implements RESVideoCore {
                 isEncoderStarted = true;
                 videoSenderThread = new VideoSenderThread("VideoSenderThread", videoEncoder, flvDataCollecter);
                 videoSenderThread.start();
-                synchronized (syncIsLooping){
-                    if(!isPreviewing && !isStreaming){
+                synchronized (syncIsLooping) {
+                    if (!isPreviewing && !isStreaming) {
                         videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_DRAW);
-                        videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock
-                                .uptimeMillis() + loopingInterval), loopingInterval);
+                        videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW,
+                                SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
                     }
                     isStreaming = true;
                 }
             }
-            catch(Exception e){
+            catch (Exception e) {
                 LogTools.trace("RESVideoClient.start failed", e);
                 return false;
             }
@@ -187,12 +228,36 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public boolean stopStreaming() {
-        return false;
+        synchronized (syncOp){
+            videoSenderThread.quit();
+            synchronized (syncIsLooping){
+                isStreaming = false;
+            }
+            try{
+                videoSenderThread.join();
+            }
+            catch(Exception e){}
+            synchronized (syncDstVideoEncoder){
+                videoEncoder.stop();
+                videoEncoder.release();
+                videoEncoder = null;
+                isEncoderStarted = false;
+            }
+            videoSenderThread = null;
+        }
+        return true;
     }
 
     @Override
     public boolean destroy() {
-        return false;
+        synchronized (syncOp) {
+            lockVideoFilter.lock();
+            if (videoFilter != null) {
+                videoFilter.onDestroy();
+            }
+            lockVideoFilter.unlock();
+            return true;
+        }
     }
 
     @Override
@@ -227,18 +292,38 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public float getDrawFrameRate() {
-        return 0;
+        synchronized (syncOp) {
+            return videoFilterHandler == null ? 0 : videoFilterHandler.getDrawFrameRate();
+        }
     }
 
     @Override
-    public void setVideoEncoder(MediaVideoEncoder encoder) {
+    public void setVideoEncoder(MediaVideoEncoder encoder) {}
+
+    @Override
+    public void setMirror(boolean isEnableMirror, boolean isEnablePreviewMirror, boolean isEnableStreamMirror) {
 
     }
 
-    @Override
-    public void setMirror(boolean isEnableMirror, boolean isEnablePreviewMirror,
-            boolean isEnableStreamMirror) {
+    public BaseSoftVideoFilter acquireVideoFilter() {
+        lockVideoFilter.lock();
+        return videoFilter;
+    }
 
+    public void releaseVideoFilter() {
+        lockVideoFilter.unlock();
+    }
+
+    public void setVideoFilter(BaseSoftVideoFilter baseSoftVideoFilter) {
+        lockVideoFilter.lock();
+        if (videoFilter != null) {
+            videoFilter.onDestroy();
+        }
+        videoFilter = baseSoftVideoFilter;
+        if (videoFilter != null) {
+            videoFilter.onInit(resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+        }
+        lockVideoFilter.unlock();
     }
 
     private class VideoFilterHandler extends Handler {
@@ -247,8 +332,17 @@ public class RESSoftVideoCore implements RESVideoCore {
         public static final int WHAT_DRAW = 2;
         public static final int WHAT_RESET_BITRATE = 3;
 
+        private int sequenceNum;
+        private RESFrameRateMeter drawFrameRateMeter;
+
         public VideoFilterHandler(Looper looper) {
             super(looper);
+            sequenceNum = 0;
+            drawFrameRateMeter = new RESFrameRateMeter();
+        }
+
+        public float getDrawFrameRate() {
+            return drawFrameRateMeter.getFps();
         }
 
         @Override

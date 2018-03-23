@@ -99,7 +99,6 @@ public class VideoSenderThread extends Thread {
     }
 
     private void sendAVCDecoderConfigurationRecord(long tms, MediaFormat format) {
-        //todo:
         byte[] AVCDecoderConfigurationRecord = PackagerCodec.H264Packager.generateAVCDecoderConfigurationRecord(format);
         int packetLen = PackagerCodec.FlvPackager.FLV_VIDEO_TAG_LENGTH + AVCDecoderConfigurationRecord.length;
         byte[] finalBuff = new byte[packetLen];
