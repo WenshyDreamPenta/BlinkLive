@@ -348,7 +348,7 @@ public class RESSoftVideoCore implements RESVideoCore {
         }
 
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(Message msg){
             switch (msg.what){
                 case WHAT_INCOMING_BUFF:
                     int targetIndex = msg.arg1;
@@ -359,7 +359,21 @@ public class RESSoftVideoCore implements RESVideoCore {
                 case WHAT_DRAW:
                     long time = (Long) msg.obj;
                     long interval = time + loopingInterval - SystemClock.uptimeMillis();
-                    //todo:
+                    synchronized (syncIsLooping){
+                        if(isPreviewing || isStreaming){
+                            if(interval > 0){
+                                videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock
+                                                .uptimeMillis() + interval), interval);
+                            }
+                            else{
+                                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock.uptimeMillis()
+                                                + loopingInterval));
+                            }
+                        }
+                        sequenceNum ++;
+                        long nowTimeMs = SystemClock.uptimeMillis();
+                    }
+                    break;
             }
         }
     }
