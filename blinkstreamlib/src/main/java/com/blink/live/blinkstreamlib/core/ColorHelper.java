@@ -4,7 +4,7 @@ package com.blink.live.blinkstreamlib.core;
  * <pre>
  *     author : wangmingxing
  *     time   : 2018/3/9
- *     desc   : 颜色格式转换类
+ *     desc   : camera预览格式转换
  * </pre>
  */
 @SuppressWarnings("all")

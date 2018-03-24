@@ -111,7 +111,8 @@ public class RESSoftVideoCore implements RESVideoCore {
                     LogTools.e("create video Mediacodec failed");
                     return false;
                 }
-                resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth, resCoreParameters.videoHeight, resCoreParameters.previewColorFormat);
+                resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth,
+                        resCoreParameters.videoHeight, resCoreParameters.previewColorFormat);
                 //video
                 int videoWidth = resCoreParameters.videoWidth;
                 int videoHeight = resCoreParameters.videoHeight;
@@ -163,7 +164,8 @@ public class RESSoftVideoCore implements RESVideoCore {
             synchronized(syncIsLooping){
                 if(!isPreviewing && !isStreaming){
                     videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_DRAW);
-                    videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
+                    videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW,
+                            SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
                 }
                 isPreviewing = true;
             }
@@ -347,6 +349,18 @@ public class RESSoftVideoCore implements RESVideoCore {
 
         @Override
         public void handleMessage(Message msg) {
+            switch (msg.what){
+                case WHAT_INCOMING_BUFF:
+                    int targetIndex = msg.arg1;
+                    System.arraycopy(orignVideoBuffs[targetIndex].buff, 0, orignNV21VideoBuff.buff, 0,
+                            orignNV21VideoBuff.buff.length);
+                    orignVideoBuffs[targetIndex].isReadyToFill = true;
+                    break;
+                case WHAT_DRAW:
+                    long time = (Long) msg.obj;
+                    long interval = time + loopingInterval - SystemClock.uptimeMillis();
+                    //todo:
+            }
         }
     }
 }

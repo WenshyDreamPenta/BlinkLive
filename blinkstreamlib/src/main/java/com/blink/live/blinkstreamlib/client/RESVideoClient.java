@@ -138,8 +138,12 @@ public class RESVideoClient {
         }
     }
 
-    private void prepareVideo(){
-        //todo :
+    private boolean prepareVideo(){
+        if (mRESCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
+            mCamera.addCallbackBuffer(new byte[mRESCoreParameters.previewBufferSize]);
+            mCamera.addCallbackBuffer(new byte[mRESCoreParameters.previewBufferSize]);
+        }
+        return true;
     }
 
 }
