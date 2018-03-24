@@ -4,11 +4,14 @@ import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+
 import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
 import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
@@ -22,6 +25,9 @@ import com.blink.live.blinkstreamlib.render.NativeRender;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 import com.blink.live.blinkstreamlib.utils.BuffSizeCalculator;
 import com.blink.live.blinkstreamlib.utils.LogTools;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -307,6 +313,7 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     }
 
+
     public BaseSoftVideoFilter acquireVideoFilter() {
         lockVideoFilter.lock();
         return videoFilter;
@@ -372,9 +379,113 @@ public class RESSoftVideoCore implements RESVideoCore {
                         }
                         sequenceNum ++;
                         long nowTimeMs = SystemClock.uptimeMillis();
+                        if(lockVideoFilter()){
+                            boolean modified = videoFilter.onFrame(orignNV21VideoBuff.buff, filteredNV21VideoBuff.buff, nowTimeMs, sequenceNum);
+                            unlockVideoFilter();
+                            rendering(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff);
+                            /**
+                             * orignNV21VideoBuff is ready
+                             * orignNV21VideoBuff->suitable4VideoEncoderBuff
+                             */
+                            if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+                                ColorHelper.NV21TOYUV420SP(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff,
+                                        suitable4VideoEncoderBuff.buff, resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                            } else if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
+                                ColorHelper.NV21TOYUV420P(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff,
+                                        suitable4VideoEncoderBuff.buff, resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                            } else {
+                                //LAKETODO colorConvert
+                            }
+                        }
+                        else {
+                            rendering(orignNV21VideoBuff.buff);
+                            checkScreenShot(orignNV21VideoBuff.buff);
+                            if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+                                ColorHelper.NV21TOYUV420SP(orignNV21VideoBuff.buff,
+                                        suitable4VideoEncoderBuff.buff,
+                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                            } else if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
+                                ColorHelper.NV21TOYUV420P(orignNV21VideoBuff.buff,
+                                        suitable4VideoEncoderBuff.buff,
+                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                            }
+                            orignNV21VideoBuff.isReadyToFill = true;
+                        }
+                        drawFrameRateMeter.count();
+                        //suitable4VideoEncoderBuff is ready
+                        synchronized (syncDstVideoEncoder) {
+                            if (videoEncoder != null && isEncoderStarted) {
+                                int eibIndex = videoEncoder.dequeueInputBuffer(-1);
+                                if (eibIndex >= 0) {
+                                    ByteBuffer dstVideoEncoderIBuffer = videoEncoder.getInputBuffers()[eibIndex];
+                                    dstVideoEncoderIBuffer.position(0);
+                                    dstVideoEncoderIBuffer.put(suitable4VideoEncoderBuff.buff, 0, suitable4VideoEncoderBuff.buff.length);
+                                    videoEncoder.queueInputBuffer(eibIndex, 0, suitable4VideoEncoderBuff.buff.length, nowTimeMs * 1000, 0);
+                                } else {
+                                    LogTools.d("dstVideoEncoder.dequeueInputBuffer(-1)<0");
+                                }
+                            }
+                        }
+                        LogTools.d("VideoFilterHandler,ProcessTime:" + (System.currentTimeMillis() - nowTimeMs));
                     }
                     break;
+                case WHAT_RESET_BITRATE: {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && videoEncoder != null) {
+                        Bundle bitrateBundle = new Bundle();
+                        bitrateBundle.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, msg.arg1);
+                        videoEncoder.setParameters(bitrateBundle);
+                    }
+                }
+                break;
             }
+        }
+
+        /**
+         * rendering nv21 using native window
+         *
+         * @param pixel
+         */
+        private void rendering(byte[] pixel) {
+            synchronized (syncPreview) {
+                if (previewRender == null) {
+                    return;
+                }
+                previewRender.rendering(pixel);
+            }
+        }
+
+        /**
+         * @return ture if filter locked & filter!=null
+         */
+
+        private boolean lockVideoFilter() {
+            try {
+                boolean locked = lockVideoFilter.tryLock(FILTER_LOCK_TOLERATION, TimeUnit.MILLISECONDS);
+                if (locked) {
+                    if (videoFilter != null) {
+                        return true;
+                    } else {
+                        lockVideoFilter.unlock();
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } catch (InterruptedException e) {
+            }
+            return false;
+        }
+
+        /**
+         * check if screenshotlistener exist
+         *
+         * @param pixel
+         */
+        private void checkScreenShot(byte[] pixel) {
+        }
+
+        private void unlockVideoFilter() {
+            lockVideoFilter.unlock();
         }
     }
 }
