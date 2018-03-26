@@ -313,7 +313,6 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     }
 
-
     public BaseSoftVideoFilter acquireVideoFilter() {
         lockVideoFilter.lock();
         return videoFilter;
@@ -443,7 +442,7 @@ public class RESSoftVideoCore implements RESVideoCore {
         /**
          * rendering nv21 using native window
          *
-         * @param pixel
+         * @param pixel 数据Byte数组
          */
         private void rendering(byte[] pixel) {
             synchronized (syncPreview) {
