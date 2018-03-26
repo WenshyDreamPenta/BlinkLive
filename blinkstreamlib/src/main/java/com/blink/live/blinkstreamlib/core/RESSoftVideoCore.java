@@ -1,6 +1,8 @@
 package com.blink.live.blinkstreamlib.core;
 
+import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -38,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *     desc   : 视频软编核心类
  * </pre>
  */
-public class RESSoftVideoCore implements RESVideoCore {
+public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     private RESCoreParameters resCoreParameters;
     private final Object syncOp = new Object();
     private SurfaceTexture cameraTexture;
@@ -117,8 +119,7 @@ public class RESSoftVideoCore implements RESVideoCore {
                     LogTools.e("create video Mediacodec failed");
                     return false;
                 }
-                resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth,
-                        resCoreParameters.videoHeight, resCoreParameters.previewColorFormat);
+                resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth, resCoreParameters.videoHeight, resCoreParameters.previewColorFormat);
                 //video
                 int videoWidth = resCoreParameters.videoWidth;
                 int videoHeight = resCoreParameters.videoHeight;
@@ -151,11 +152,11 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public void startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
-        synchronized (syncPreview){
-            if(previewRender != null){
+        synchronized (syncPreview) {
+            if (previewRender != null) {
                 throw new RuntimeException("startPreview without desytroy previous");
             }
-            switch (resCoreParameters.renderingMode){
+            switch (resCoreParameters.renderingMode) {
                 case RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW:
                     previewRender = new NativeRender();
                     break;
@@ -165,10 +166,9 @@ public class RESSoftVideoCore implements RESVideoCore {
                 default:
                     throw new RuntimeException("Unknow rendering mode");
             }
-            previewRender.create(surfaceTexture, resCoreParameters.previewColorFormat, resCoreParameters.videoWidth,
-                    resCoreParameters.videoHeight, visualWidth, visualHeight);
-            synchronized(syncIsLooping){
-                if(!isPreviewing && !isStreaming){
+            previewRender.create(surfaceTexture, resCoreParameters.previewColorFormat, resCoreParameters.videoWidth, resCoreParameters.videoHeight, visualWidth, visualHeight);
+            synchronized (syncIsLooping) {
+                if (!isPreviewing && !isStreaming) {
                     videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_DRAW);
                     videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW,
                             SystemClock.uptimeMillis() + loopingInterval), loopingInterval);
@@ -190,13 +190,13 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public void stopPreview(boolean releaseTexture) {
-        synchronized (syncPreview){
-            if(previewRender == null){
+        synchronized (syncPreview) {
+            if (previewRender == null) {
                 throw new RuntimeException("stopPreview without startPreview");
             }
             previewRender.destroy(releaseTexture);
             previewRender = null;
-            synchronized (syncIsLooping){
+            synchronized (syncIsLooping) {
                 isPreviewing = false;
             }
         }
@@ -236,16 +236,17 @@ public class RESSoftVideoCore implements RESVideoCore {
 
     @Override
     public boolean stopStreaming() {
-        synchronized (syncOp){
+        synchronized (syncOp) {
             videoSenderThread.quit();
-            synchronized (syncIsLooping){
+            synchronized (syncIsLooping) {
                 isStreaming = false;
             }
-            try{
+            try {
                 videoSenderThread.join();
             }
-            catch(Exception e){}
-            synchronized (syncDstVideoEncoder){
+            catch (Exception e) {
+            }
+            synchronized (syncDstVideoEncoder) {
                 videoEncoder.stop();
                 videoEncoder.release();
                 videoEncoder = null;
@@ -268,29 +269,45 @@ public class RESSoftVideoCore implements RESVideoCore {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public void reSetVideoBitrate(int bitrate) {
-
+        synchronized (syncOp) {
+            if (videoFilterHandler != null) {
+                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_RESET_BITRATE, 0));
+                resCoreParameters.mediacdoecAVCBitRate = bitrate;
+                dstVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitrate);
+            }
+        }
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public int getVideoBitrate() {
-        return 0;
+        synchronized (syncOp) {
+            return resCoreParameters.mediacdoecAVCBitRate;
+        }
     }
 
     @Override
     public void reSetVideoFPS(int fps) {
-
+        synchronized (syncOp) {
+            resCoreParameters.videoFPS = fps;
+            loopingInterval = 1000 / resCoreParameters.videoFPS;
+        }
     }
 
     @Override
     public void reSetVideoSize(RESCoreParameters newParameters) {
-
+        synchronized (syncOp) {
+            resCoreParameters.videoHeight = newParameters.videoHeight;
+            resCoreParameters.videoWidth = newParameters.videoWidth;
+        }
     }
 
     @Override
     public void takeScreenShot(RESScreenShotListener listener) {
-
+        //todo: takeScreen Shot
     }
 
     @Override
@@ -311,6 +328,30 @@ public class RESSoftVideoCore implements RESVideoCore {
     @Override
     public void setMirror(boolean isEnableMirror, boolean isEnablePreviewMirror, boolean isEnableStreamMirror) {
 
+    }
+
+    @Override
+    public void queueVideo(byte[] rawVideoFrame) {
+        synchronized (syncOp) {
+            int targetIndex = (lastVideoQueueBuffIndex + 1) % orignVideoBuffs.length;
+            if (orignVideoBuffs[targetIndex].isReadyToFill) {
+                LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
+                acceptVideo(rawVideoFrame, orignVideoBuffs[targetIndex].buff);
+                orignVideoBuffs[targetIndex].isReadyToFill = false;
+                lastVideoQueueBuffIndex = targetIndex;
+                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_INCOMING_BUFF, targetIndex, 0));
+            }
+            else {
+                LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
+            }
+        }
+    }
+
+    @Override
+    public void acceptVideo(byte[] src, byte[] dst) {
+        int directionFlag = currentCamera ==
+                Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
+        ColorHelper.NV21Transform(src, dst, resCoreParameters.previewVideoWidth, resCoreParameters.previewVideoHeight, directionFlag);
     }
 
     public BaseSoftVideoFilter acquireVideoFilter() {
@@ -354,31 +395,30 @@ public class RESSoftVideoCore implements RESVideoCore {
         }
 
         @Override
-        public void handleMessage(Message msg){
-            switch (msg.what){
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
                 case WHAT_INCOMING_BUFF:
                     int targetIndex = msg.arg1;
-                    System.arraycopy(orignVideoBuffs[targetIndex].buff, 0, orignNV21VideoBuff.buff, 0,
-                            orignNV21VideoBuff.buff.length);
+                    System.arraycopy(orignVideoBuffs[targetIndex].buff, 0, orignNV21VideoBuff.buff, 0, orignNV21VideoBuff.buff.length);
                     orignVideoBuffs[targetIndex].isReadyToFill = true;
                     break;
                 case WHAT_DRAW:
                     long time = (Long) msg.obj;
                     long interval = time + loopingInterval - SystemClock.uptimeMillis();
-                    synchronized (syncIsLooping){
-                        if(isPreviewing || isStreaming){
-                            if(interval > 0){
-                                videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock
-                                                .uptimeMillis() + interval), interval);
+                    synchronized (syncIsLooping) {
+                        if (isPreviewing || isStreaming) {
+                            if (interval > 0) {
+                                videoFilterHandler.sendMessageDelayed(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW,
+                                        SystemClock.uptimeMillis() + interval), interval);
                             }
-                            else{
-                                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW, SystemClock.uptimeMillis()
-                                                + loopingInterval));
+                            else {
+                                videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_DRAW,
+                                        SystemClock.uptimeMillis() + loopingInterval));
                             }
                         }
-                        sequenceNum ++;
+                        sequenceNum++;
                         long nowTimeMs = SystemClock.uptimeMillis();
-                        if(lockVideoFilter()){
+                        if (lockVideoFilter()) {
                             boolean modified = videoFilter.onFrame(orignNV21VideoBuff.buff, filteredNV21VideoBuff.buff, nowTimeMs, sequenceNum);
                             unlockVideoFilter();
                             rendering(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff);
@@ -386,26 +426,28 @@ public class RESSoftVideoCore implements RESVideoCore {
                              * orignNV21VideoBuff is ready
                              * orignNV21VideoBuff->suitable4VideoEncoderBuff
                              */
-                            if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
-                                ColorHelper.NV21TOYUV420SP(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff,
-                                        suitable4VideoEncoderBuff.buff, resCoreParameters.videoWidth * resCoreParameters.videoHeight);
-                            } else if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
-                                ColorHelper.NV21TOYUV420P(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff,
-                                        suitable4VideoEncoderBuff.buff, resCoreParameters.videoWidth * resCoreParameters.videoHeight);
-                            } else {
-                                //LAKETODO colorConvert
+                            if (resCoreParameters.mediacodecAVCColorFormat ==
+                                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+                                ColorHelper.NV21TOYUV420SP(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
+                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                            }
+                            else if (resCoreParameters.mediacodecAVCColorFormat ==
+                                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
+                                ColorHelper.NV21TOYUV420P(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
+                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
                             }
                         }
                         else {
                             rendering(orignNV21VideoBuff.buff);
                             checkScreenShot(orignNV21VideoBuff.buff);
-                            if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
-                                ColorHelper.NV21TOYUV420SP(orignNV21VideoBuff.buff,
-                                        suitable4VideoEncoderBuff.buff,
+                            if (resCoreParameters.mediacodecAVCColorFormat ==
+                                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+                                ColorHelper.NV21TOYUV420SP(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
                                         resCoreParameters.videoWidth * resCoreParameters.videoHeight);
-                            } else if (resCoreParameters.mediacodecAVCColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
-                                ColorHelper.NV21TOYUV420P(orignNV21VideoBuff.buff,
-                                        suitable4VideoEncoderBuff.buff,
+                            }
+                            else if (resCoreParameters.mediacodecAVCColorFormat ==
+                                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
+                                ColorHelper.NV21TOYUV420P(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
                                         resCoreParameters.videoWidth * resCoreParameters.videoHeight);
                             }
                             orignNV21VideoBuff.isReadyToFill = true;
@@ -419,8 +461,10 @@ public class RESSoftVideoCore implements RESVideoCore {
                                     ByteBuffer dstVideoEncoderIBuffer = videoEncoder.getInputBuffers()[eibIndex];
                                     dstVideoEncoderIBuffer.position(0);
                                     dstVideoEncoderIBuffer.put(suitable4VideoEncoderBuff.buff, 0, suitable4VideoEncoderBuff.buff.length);
-                                    videoEncoder.queueInputBuffer(eibIndex, 0, suitable4VideoEncoderBuff.buff.length, nowTimeMs * 1000, 0);
-                                } else {
+                                    videoEncoder.queueInputBuffer(eibIndex, 0, suitable4VideoEncoderBuff.buff.length,
+                                            nowTimeMs * 1000, 0);
+                                }
+                                else {
                                     LogTools.d("dstVideoEncoder.dequeueInputBuffer(-1)<0");
                                 }
                             }
@@ -463,14 +507,17 @@ public class RESSoftVideoCore implements RESVideoCore {
                 if (locked) {
                     if (videoFilter != null) {
                         return true;
-                    } else {
+                    }
+                    else {
                         lockVideoFilter.unlock();
                         return false;
                     }
-                } else {
+                }
+                else {
                     return false;
                 }
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
             }
             return false;
         }
