@@ -7,7 +7,7 @@ import android.view.Surface;
  * <pre>
  *     author : wangmingxing
  *     time   : 2018/3/9
- *     desc   :
+ *     desc   : use native render method
  * </pre>
  */
 public class NativeRender implements IRender {
