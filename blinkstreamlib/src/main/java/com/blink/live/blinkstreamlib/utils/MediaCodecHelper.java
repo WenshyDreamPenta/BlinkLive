@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.core;
+package com.blink.live.blinkstreamlib.utils;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -6,7 +6,6 @@ import android.media.MediaFormat;
 import android.os.Build;
 
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
-import com.blink.live.blinkstreamlib.utils.LogTools;
 
 import java.io.IOException;
 

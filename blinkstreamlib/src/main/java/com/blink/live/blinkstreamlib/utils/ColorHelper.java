@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.core;
+package com.blink.live.blinkstreamlib.utils;
 
 /**
  * <pre>

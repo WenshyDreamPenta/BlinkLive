@@ -20,7 +20,7 @@ import com.blink.live.blinkstreamlib.utils.LogTools;
  * </pre>
  */
 public class RESVideoClient {
-    RESCoreParameters mRESCoreParameters;
+    private RESCoreParameters mRESCoreParameters;
     private final Object syncOp = new Object();
     private Camera mCamera;
     public SurfaceTexture camTexture;
