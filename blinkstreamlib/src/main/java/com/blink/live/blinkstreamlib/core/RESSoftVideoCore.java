@@ -119,7 +119,8 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                     LogTools.e("create video Mediacodec failed");
                     return false;
                 }
-                resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth, resCoreParameters.videoHeight, resCoreParameters.previewColorFormat);
+                resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth, resCoreParameters.videoHeight,
+                        resCoreParameters.previewColorFormat);
                 //video
                 int videoWidth = resCoreParameters.videoWidth;
                 int videoHeight = resCoreParameters.videoHeight;

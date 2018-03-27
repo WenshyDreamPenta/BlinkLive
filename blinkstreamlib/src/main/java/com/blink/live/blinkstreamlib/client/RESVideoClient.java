@@ -101,8 +101,8 @@ public class RESVideoClient {
     private void resolveResolution(RESCoreParameters resCoreParameters, RESize targetVideoSize) {
         if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
             if (resCoreParameters.isPortrait) {
-                resCoreParameters.videoHeight = resCoreParameters.previewVideoWidth;
-                resCoreParameters.videoWidth = resCoreParameters.previewVideoHeight;
+                resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
+                resCoreParameters.videoHeight = resCoreParameters.previewVideoHeight;
             }
             else {
                 resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
