@@ -82,7 +82,7 @@ public abstract class MediaEncoder implements Runnable {
         }
     }
 
-    public void startRecording() {
+    void startRecording() {
         if (DEBUG) {
             Log.v(TAG, "startRecording");
         }
@@ -93,7 +93,7 @@ public abstract class MediaEncoder implements Runnable {
         }
     }
 
-    public void stopRecording() {
+    void stopRecording() {
         if (DEBUG)
             Log.v(TAG, "stopRecording");
         synchronized (SyncO) {
@@ -103,6 +103,10 @@ public abstract class MediaEncoder implements Runnable {
             mRequestStop = true;    // for rejecting newer frame
             SyncO.notifyAll();
         }
+    }
+
+    public void release(){
+        //todo:
     }
 
     public abstract void prepare() throws IOException;

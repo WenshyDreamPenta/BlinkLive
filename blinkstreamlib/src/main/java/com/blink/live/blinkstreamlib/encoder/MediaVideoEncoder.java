@@ -12,6 +12,7 @@ import java.io.IOException;
 public class MediaVideoEncoder extends MediaEncoder{
     public MediaVideoEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener) {
         super(muxer, mediaEncoderListener);
+        //todo:
     }
 
     @Override
