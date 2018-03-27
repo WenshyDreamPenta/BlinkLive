@@ -9,7 +9,7 @@ import com.blink.live.blinkstreamlib.core.RESVideoCore;
 import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.model.RESize;
-import com.blink.live.blinkstreamlib.tools.CameraHelper;
+import com.blink.live.blinkstreamlib.tools.CameraTools;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 /**
@@ -48,21 +48,21 @@ public class RESVideoClient {
                 return false;
             }
             Camera.Parameters parameters = mCamera.getParameters();
-            CameraHelper.selectCameraPreviewWH(parameters, mRESCoreParameters, resConfig.getTargetPreviewSize());
-            CameraHelper.selectCameraFpsRange(parameters, mRESCoreParameters);
+            CameraTools.selectCameraPreviewWH(parameters, mRESCoreParameters, resConfig.getTargetPreviewSize());
+            CameraTools.selectCameraFpsRange(parameters, mRESCoreParameters);
             if (resConfig.getVideoFPS() > mRESCoreParameters.previewMaxFps / 1000) {
                 mRESCoreParameters.videoFPS = mRESCoreParameters.previewMaxFps / 1000;
             } else {
                 mRESCoreParameters.videoFPS = resConfig.getVideoFPS();
             }
             resolveResolution(mRESCoreParameters, resConfig.getTargetVideoSize());
-            if (!CameraHelper.selectCameraColorFormat(parameters, mRESCoreParameters)) {
-                LogUtil.e("CameraHelper.selectCameraColorFormat,Failed");
+            if (!CameraTools.selectCameraColorFormat(parameters, mRESCoreParameters)) {
+                LogUtil.e("CameraTools.selectCameraColorFormat,Failed");
                 mRESCoreParameters.dump();
                 return false;
             }
-            if (!CameraHelper.configCamera(mCamera, mRESCoreParameters)) {
-                LogUtil.e("CameraHelper.configCamera,Failed");
+            if (!CameraTools.configCamera(mCamera, mRESCoreParameters)) {
+                LogUtil.e("CameraTools.configCamera,Failed");
                 mRESCoreParameters.dump();
                 return false;
             }

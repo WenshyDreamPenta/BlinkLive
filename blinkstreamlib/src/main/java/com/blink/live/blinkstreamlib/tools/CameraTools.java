@@ -19,7 +19,7 @@ import java.util.List;
  *     desc   : 摄像头工具类
  * </pre>
  */
-public class CameraHelper {
+public class CameraTools {
     public static int targetFps = 30000;
     private static int[] supportedSrcVideoFrameColorType = new int[]{ImageFormat.NV21, ImageFormat.YV12};
 

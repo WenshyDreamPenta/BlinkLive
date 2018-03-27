@@ -26,9 +26,9 @@ import com.blink.live.blinkstreamlib.render.IRender;
 import com.blink.live.blinkstreamlib.render.NativeRender;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 import com.blink.live.blinkstreamlib.tools.BuffSizeCalculator;
-import com.blink.live.blinkstreamlib.tools.ColorHelper;
+import com.blink.live.blinkstreamlib.tools.ColorTools;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
-import com.blink.live.blinkstreamlib.tools.MediaCodecHelper;
+import com.blink.live.blinkstreamlib.tools.MediaCodecTools;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +115,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
             loopingInterval = 1000 / resCoreParameters.videoFPS;
             dstVideoFormat = new MediaFormat();
             synchronized (syncDstVideoEncoder) {
-                videoEncoder = MediaCodecHelper.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
+                videoEncoder = MediaCodecTools.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
                 isEncoderStarted = false;
                 if (videoEncoder == null) {
                     LogUtil.e("create video Mediacodec failed");
@@ -354,7 +354,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     public void acceptVideo(byte[] src, byte[] dst) {
         int directionFlag = currentCamera ==
                 Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
-        ColorHelper.NV21Transform(src, dst, resCoreParameters.previewVideoWidth, resCoreParameters.previewVideoHeight, directionFlag);
+        ColorTools.NV21Transform(src, dst, resCoreParameters.previewVideoWidth, resCoreParameters.previewVideoHeight, directionFlag);
     }
 
     public BaseSoftVideoFilter acquireVideoFilter() {
@@ -431,12 +431,12 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                              */
                             if (resCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
-                                ColorHelper.NV21TOYUV420SP(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
+                                ColorTools.NV21TOYUV420SP(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
                                         resCoreParameters.videoWidth * resCoreParameters.videoHeight);
                             }
                             else if (resCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
-                                ColorHelper.NV21TOYUV420P(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
+                                ColorTools.NV21TOYUV420P(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
                                         resCoreParameters.videoWidth * resCoreParameters.videoHeight);
                             }
                         }
@@ -445,12 +445,12 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                             checkScreenShot(orignNV21VideoBuff.buff);
                             if (resCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
-                                ColorHelper.NV21TOYUV420SP(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
+                                ColorTools.NV21TOYUV420SP(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
                                         resCoreParameters.videoWidth * resCoreParameters.videoHeight);
                             }
                             else if (resCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
-                                ColorHelper.NV21TOYUV420P(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
+                                ColorTools.NV21TOYUV420P(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
                                         resCoreParameters.videoWidth * resCoreParameters.videoHeight);
                             }
                             orignNV21VideoBuff.isReadyToFill = true;

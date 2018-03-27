@@ -8,7 +8,7 @@ package com.blink.live.blinkstreamlib.tools;
  * </pre>
  */
 @SuppressWarnings("all")
-public class ColorHelper {
+public class ColorTools {
 
     static public native void NV21TOYUV420SP(byte[] src, byte[] dst, int YSize);
 

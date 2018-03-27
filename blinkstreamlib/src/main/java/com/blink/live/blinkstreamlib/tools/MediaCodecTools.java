@@ -17,7 +17,7 @@ import java.io.IOException;
  *     desc   : MediaCodec Helper
  * </pre>
  */
-public class MediaCodecHelper {
+public class MediaCodecTools {
 
     /**
      * 创建video软编码
