@@ -7,5 +7,5 @@ package com.blink.live.blinkstreamlib.encoder;
  *     desc   : MediaCodec Encoder
  * </pre>
  */
-public class MediaVideoEncoder {
+public class MediaVideoEncoder{
 }

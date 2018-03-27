@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.utils;
+package com.blink.live.blinkstreamlib.tools;
 
 import android.graphics.ImageFormat;
 import android.media.MediaCodecInfo;

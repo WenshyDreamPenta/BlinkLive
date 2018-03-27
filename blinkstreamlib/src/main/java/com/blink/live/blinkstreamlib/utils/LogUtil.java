@@ -9,7 +9,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.UnknownHostException;
 
-public class LogTools {
+public class LogUtil {
     protected static final String TAG = "RESLog";
     private static boolean enableLog = false;
 
@@ -18,7 +18,7 @@ public class LogTools {
     }
 
     public static void setEnableLog(boolean enableLog) {
-        LogTools.enableLog = enableLog;
+        LogUtil.enableLog = enableLog;
     }
 
     public static void e(String content) {

@@ -25,10 +25,10 @@ import com.blink.live.blinkstreamlib.render.GLESRender;
 import com.blink.live.blinkstreamlib.render.IRender;
 import com.blink.live.blinkstreamlib.render.NativeRender;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
-import com.blink.live.blinkstreamlib.utils.BuffSizeCalculator;
-import com.blink.live.blinkstreamlib.utils.ColorHelper;
-import com.blink.live.blinkstreamlib.utils.LogTools;
-import com.blink.live.blinkstreamlib.utils.MediaCodecHelper;
+import com.blink.live.blinkstreamlib.tools.BuffSizeCalculator;
+import com.blink.live.blinkstreamlib.tools.ColorHelper;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
+import com.blink.live.blinkstreamlib.tools.MediaCodecHelper;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -118,7 +118,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                 videoEncoder = MediaCodecHelper.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
                 isEncoderStarted = false;
                 if (videoEncoder == null) {
-                    LogTools.e("create video Mediacodec failed");
+                    LogUtil.e("create video Mediacodec failed");
                     return false;
                 }
                 resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth, resCoreParameters.videoHeight,
@@ -230,7 +230,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                 }
             }
             catch (Exception e) {
-                LogTools.trace("RESVideoClient.start failed", e);
+                LogUtil.trace("RESVideoClient.start failed", e);
                 return false;
             }
         }
@@ -338,14 +338,14 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
         synchronized (syncOp) {
             int targetIndex = (lastVideoQueueBuffIndex + 1) % orignVideoBuffs.length;
             if (orignVideoBuffs[targetIndex].isReadyToFill) {
-                LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
+                LogUtil.d("queueVideo,accept ,targetIndex" + targetIndex);
                 acceptVideo(rawVideoFrame, orignVideoBuffs[targetIndex].buff);
                 orignVideoBuffs[targetIndex].isReadyToFill = false;
                 lastVideoQueueBuffIndex = targetIndex;
                 videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_INCOMING_BUFF, targetIndex, 0));
             }
             else {
-                LogTools.d("queueVideo,accept ,targetIndex" + targetIndex);
+                LogUtil.d("queueVideo,accept ,targetIndex" + targetIndex);
             }
         }
     }
@@ -468,11 +468,11 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                                             nowTimeMs * 1000, 0);
                                 }
                                 else {
-                                    LogTools.d("dstVideoEncoder.dequeueInputBuffer(-1)<0");
+                                    LogUtil.d("dstVideoEncoder.dequeueInputBuffer(-1)<0");
                                 }
                             }
                         }
-                        LogTools.d("VideoFilterHandler,ProcessTime:" + (System.currentTimeMillis() - nowTimeMs));
+                        LogUtil.d("VideoFilterHandler,ProcessTime:" + (System.currentTimeMillis() - nowTimeMs));
                     }
                     break;
                 case WHAT_RESET_BITRATE: {

@@ -9,8 +9,8 @@ import com.blink.live.blinkstreamlib.core.RESByteSpeedometer;
 import com.blink.live.blinkstreamlib.core.RESFrameRateMeter;
 import com.blink.live.blinkstreamlib.core.listeners.RESConnectionListener;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
-import com.blink.live.blinkstreamlib.utils.CallbackDelivery;
-import com.blink.live.blinkstreamlib.utils.LogTools;
+import com.blink.live.blinkstreamlib.tools.CallbackDelivery;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 /**
  * <pre>
@@ -158,12 +158,12 @@ public class RESRtmpPusher implements IWorker {
                         break;
                     }
                     sendFrameRateMeter.reSet();
-                    LogTools.d("RESRtmpSender,WorkHandler,tid=" + Thread.currentThread().getId());
+                    LogUtil.d("RESRtmpSender,WorkHandler,tid=" + Thread.currentThread().getId());
                     jniRtmpPointer = RtmpClient.open((String) msg.obj, true);
                     final int openR = jniRtmpPointer == 0 ? 1 : 0;
                     if (openR == 0) {
                         serverIpAddr = RtmpClient.getIpAddr(jniRtmpPointer);
-                        LogTools.d("serverIpAddr = " + serverIpAddr);
+                        LogUtil.d("serverIpAddr = " + serverIpAddr);
                     }
                     //使用主线程Handler调用回调
                     synchronized (syncConnectionListener) {
@@ -219,7 +219,7 @@ public class RESRtmpPusher implements IWorker {
                     if (writeMsgNum >= (maxQueueLength * 3 / 4) &&
                             flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO &&
                             flvData.droppable) {
-                        LogTools.d("senderQueue is crowded,abandon video");
+                        LogUtil.d("senderQueue is crowded,abandon video");
                         break;
                     }
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
@@ -297,7 +297,7 @@ public class RESRtmpPusher implements IWorker {
                     ++writeMsgNum;
                 }
                 else {
-                    LogTools.d("senderQueue is full,abandon");
+                    LogUtil.d("senderQueue is full,abandon");
                 }
             }
         }

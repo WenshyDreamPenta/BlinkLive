@@ -6,7 +6,7 @@ import android.media.MediaFormat;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvData;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 import com.blink.live.blinkstreamlib.rtmp.RESRtmpPusher;
-import com.blink.live.blinkstreamlib.utils.LogTools;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.nio.ByteBuffer;
 
@@ -59,18 +59,18 @@ public class VideoSenderThread extends Thread {
                 }
                 switch (eobIndex) {
                     case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
+                        LogUtil.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
                         break;
                     case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        LogTools.d("VideoSenderThread,MediaCodec.INFO_TRY_AGAIN_LATER");
+                        LogUtil.d("VideoSenderThread,MediaCodec.INFO_TRY_AGAIN_LATER");
                         break;
                     case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                        LogTools.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:" +
+                        LogUtil.d("VideoSenderThread,MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:" +
                                 dstVideoEncoder.getOutputFormat().toString());
                         sendAVCDecoderConfigurationRecord(0, dstVideoEncoder.getOutputFormat());
                         break;
                     default:
-                        LogTools.d("VideoSenderThread,MediaCode,eobIndex=" + eobIndex);
+                        LogUtil.d("VideoSenderThread,MediaCode,eobIndex=" + eobIndex);
                         if (startTime == 0) {
                             startTime = eInfo.presentationTimeUs / 1000;
                         }

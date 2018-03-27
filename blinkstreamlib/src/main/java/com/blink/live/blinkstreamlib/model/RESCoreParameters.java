@@ -1,6 +1,6 @@
 package com.blink.live.blinkstreamlib.model;
 
-import com.blink.live.blinkstreamlib.utils.LogTools;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -98,7 +98,7 @@ public class RESCoreParameters {
     }
 
     public void dump() {
-        LogTools.e(this.toString());
+        LogUtil.e(this.toString());
     }
 
     @Override

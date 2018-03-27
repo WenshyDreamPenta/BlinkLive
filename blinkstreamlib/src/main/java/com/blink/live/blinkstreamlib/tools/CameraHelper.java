@@ -1,10 +1,11 @@
-package com.blink.live.blinkstreamlib.utils;
+package com.blink.live.blinkstreamlib.tools;
 
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.model.RESize;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -112,7 +113,7 @@ public class CameraHelper {
             coreParameters.previewColorFormat = ImageFormat.YV12;
         }
         else {
-            LogTools.e("!!!!!!!!!!!UnSupport,previewColorFormat");
+            LogUtil.e("!!!!!!!!!!!UnSupport,previewColorFormat");
             return false;
         }
         return true;

@@ -5,7 +5,7 @@ import android.media.MediaCodec;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvData;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 import com.blink.live.blinkstreamlib.rtmp.RESRtmpPusher;
-import com.blink.live.blinkstreamlib.utils.LogTools;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.nio.ByteBuffer;
 
@@ -47,18 +47,18 @@ public class AudioSenderThread extends Thread {
             int eobIndex = audioEncoder.dequeueOutputBuffer(mBufferInfo, WAIT_TIME);
             switch (eobIndex) {
                 case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                    LogTools.d("AudioSenderThread,MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
+                    LogUtil.d("AudioSenderThread,MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
                     break;
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
-                    LogTools.d("AudioSenderThread,MediaCodec.INFO_TRY_AGAIN_LATER");
+                    LogUtil.d("AudioSenderThread,MediaCodec.INFO_TRY_AGAIN_LATER");
                     break;
                 case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                    LogTools.d("AudioSenderThread,MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:" + audioEncoder.getOutputFormat().toString());
+                    LogUtil.d("AudioSenderThread,MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:" + audioEncoder.getOutputFormat().toString());
                     ByteBuffer csd0 = audioEncoder.getOutputFormat().getByteBuffer("csd-0");
                     sendAudioSpecificConfig(0, csd0);
                     break;
                 default:
-                    LogTools.d("AudioSenderThread,MediaCode,eobIndex=" + eobIndex);
+                    LogUtil.d("AudioSenderThread,MediaCode,eobIndex=" + eobIndex);
                     if (startTime == 0) {
                         startTime = mBufferInfo.presentationTimeUs / 1000;
                     }

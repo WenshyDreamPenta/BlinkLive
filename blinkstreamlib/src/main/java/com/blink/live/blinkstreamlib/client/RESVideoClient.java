@@ -9,8 +9,8 @@ import com.blink.live.blinkstreamlib.core.RESVideoCore;
 import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.model.RESize;
-import com.blink.live.blinkstreamlib.utils.CameraHelper;
-import com.blink.live.blinkstreamlib.utils.LogTools;
+import com.blink.live.blinkstreamlib.tools.CameraHelper;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 /**
  * <pre>
@@ -44,7 +44,7 @@ public class RESVideoClient {
                 curentCameraIndex = resConfig.getDefaultCamera();
             }
             if (null == (mCamera = createCamera(curentCameraIndex))){
-                LogTools.e("can not open camera");
+                LogUtil.e("can not open camera");
                 return false;
             }
             Camera.Parameters parameters = mCamera.getParameters();
@@ -57,12 +57,12 @@ public class RESVideoClient {
             }
             resolveResolution(mRESCoreParameters, resConfig.getTargetVideoSize());
             if (!CameraHelper.selectCameraColorFormat(parameters, mRESCoreParameters)) {
-                LogTools.e("CameraHelper.selectCameraColorFormat,Failed");
+                LogUtil.e("CameraHelper.selectCameraColorFormat,Failed");
                 mRESCoreParameters.dump();
                 return false;
             }
             if (!CameraHelper.configCamera(mCamera, mRESCoreParameters)) {
-                LogTools.e("CameraHelper.configCamera,Failed");
+                LogUtil.e("CameraHelper.configCamera,Failed");
                 mRESCoreParameters.dump();
                 return false;
             }
@@ -88,11 +88,11 @@ public class RESVideoClient {
             mCamera.setDisplayOrientation(0);
         }
         catch (SecurityException e) {
-            LogTools.trace("no permission", e);
+            LogUtil.trace("no permission", e);
             return null;
         }
         catch (Exception e) {
-            LogTools.trace("camera.open()failed", e);
+            LogUtil.trace("camera.open()failed", e);
             return null;
         }
         return mCamera;

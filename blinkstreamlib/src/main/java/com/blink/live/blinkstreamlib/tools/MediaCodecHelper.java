@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.utils;
+package com.blink.live.blinkstreamlib.tools;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -6,6 +6,7 @@ import android.media.MediaFormat;
 import android.os.Build;
 
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.io.IOException;
 
@@ -57,13 +58,13 @@ public class MediaCodecHelper {
                 coreParameters.mediacodecAVCColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar;
             }
             if (dstVideoColorFormat == -1) {
-                LogTools.e("UnSupport,mediaCodecColorFormat");
+                LogUtil.e("UnSupport,mediaCodecColorFormat");
                 return null;
             }
             videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, dstVideoColorFormat);
         }
         catch (Exception e) {
-            LogTools.trace(e);
+            LogUtil.trace(e);
             return null;
         }
         return result;
@@ -86,12 +87,12 @@ public class MediaCodecHelper {
         audioFormat.setInteger(MediaFormat.KEY_CHANNEL_COUNT, coreParameters.mediacodecAACChannelCount);
         audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, coreParameters.mediacodecAACBitRate);
         audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, coreParameters.mediacodecAACMaxInputSize);
-        LogTools.d("creatingAudioEncoder,format=" + audioFormat.toString());
+        LogUtil.d("creatingAudioEncoder,format=" + audioFormat.toString());
         try {
             result = MediaCodec.createEncoderByType(audioFormat.getString(MediaFormat.KEY_MIME));
         }
         catch (Exception e) {
-            LogTools.trace("can`t create audioEncoder!", e);
+            LogUtil.trace("can`t create audioEncoder!", e);
             return null;
         }
         return result;
@@ -124,7 +125,7 @@ public class MediaCodecHelper {
         try {
             result = MediaCodec.createEncoderByType(videoFormat.getString(MediaFormat.KEY_MIME));
         } catch (IOException e) {
-            LogTools.trace(e);
+            LogUtil.trace(e);
             return null;
         }
         return result;

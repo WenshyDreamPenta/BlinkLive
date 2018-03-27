@@ -6,7 +6,7 @@ import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 
-import com.blink.live.blinkstreamlib.utils.GLESTools;
+import com.blink.live.blinkstreamlib.tools.GLESTools;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

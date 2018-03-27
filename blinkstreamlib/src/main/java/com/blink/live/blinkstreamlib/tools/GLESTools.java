@@ -1,9 +1,11 @@
-package com.blink.live.blinkstreamlib.utils;
+package com.blink.live.blinkstreamlib.tools;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
+
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -79,7 +81,7 @@ public class GLESTools {
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
             String msg = op + ": glError 0x" + Integer.toHexString(error);
-            LogTools.d(msg);
+            LogUtil.d(msg);
             throw new RuntimeException(msg);
         }
     }
