@@ -10,6 +10,8 @@ import java.io.IOException;
  * </pre>
  */
 public class MediaAudioEncoder  extends MediaEncoder{
+    private static final boolean DEBUG = false;
+    private static final String TAG = "MediaAudioEncoder";
     public MediaAudioEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener) {
         super(muxer, mediaEncoderListener);
     }
