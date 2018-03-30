@@ -66,7 +66,8 @@ public abstract class MediaEncoder implements Runnable {
 
     protected final MediaEncoderListener mediaEncoderListener;
 
-    public MediaEncoder(final MediaMuxerWrapper muxer, final MediaEncoderListener mediaEncoderListener) {
+    public MediaEncoder(final MediaMuxerWrapper muxer,
+            final MediaEncoderListener mediaEncoderListener) {
         if (mediaEncoderListener == null) {
             throw new NullPointerException("MediaEncoderListener is null");
         }
@@ -90,7 +91,7 @@ public abstract class MediaEncoder implements Runnable {
 
     @Override
     public void run() {
-        synchronized (SyncO){
+        synchronized (SyncO) {
             mRequestStop = false;
             mRequestDrain = 0;
             SyncO.notifyAll();
@@ -98,21 +99,42 @@ public abstract class MediaEncoder implements Runnable {
         final boolean isRunning = true;
         boolean localRequestStop;
         boolean localRequestDrain;
-        while(isRunning){
-            synchronized(SyncO){
+        while (isRunning) {
+            synchronized (SyncO) {
                 localRequestDrain = mRequestDrain > 0;
                 localRequestStop = mRequestStop;
-                if(localRequestDrain){
-                    mRequestDrain --;
+                if (localRequestDrain) {
+                    mRequestDrain--;
                 }
-                if(localRequestStop){
+                if (localRequestStop) {
                     drain();
                     signalEndOfInputStream();
                     drain();
                     release();
-                    //todo:
+                    break;
+                }
+                if (localRequestDrain) {
+                    drain();
+                }
+                else {
+                    synchronized (SyncO) {
+                        try {
+                            SyncO.wait();
+                        }
+                        catch (Exception e) {
+                            break;
+                        }
+                    }
+
                 }
             }
+        }
+        if (DEBUG) {
+            Log.d(TAG, "Encoder thread exiting");
+        }
+        synchronized (SyncO) {
+            mIsCapturing = false;
+            mRequestStop = true;
         }
     }
 
@@ -139,6 +161,7 @@ public abstract class MediaEncoder implements Runnable {
             SyncO.notifyAll();
         }
     }
+
     protected void signalEndOfInputStream() {
         if (DEBUG)
             Log.d(TAG, "sending EOS to encoder");
@@ -190,7 +213,8 @@ public abstract class MediaEncoder implements Runnable {
      * @param length             length of byte array, zero means EOS.
      * @param presentationTimeUs
      */
-    protected void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
+    protected void encode(final ByteBuffer buffer, final int length,
+            final long presentationTimeUs) {
         if (!mIsCapturing) {
             return;
         }
@@ -266,21 +290,23 @@ public abstract class MediaEncoder implements Runnable {
                     }
                 }
             }
-            else if(encoderStatus < 0){
+            else if (encoderStatus < 0) {
                 if (DEBUG)
-                    Log.w(TAG, "drain:unexpected result from encoder#dequeueOutputBuffer: " + encoderStatus);
+                    Log.w(TAG, "drain:unexpected result from encoder#dequeueOutputBuffer: " +
+                            encoderStatus);
             }
             else {
                 final ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
-                if(encodedData == null){
-                    throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
+                if (encodedData == null) {
+                    throw new RuntimeException(
+                            "encoderOutputBuffer " + encoderStatus + " was null");
                 }
-                if((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) !=0 ){
+                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
                     mBufferInfo.size = 0;
                 }
-                if(mBufferInfo.size != 0){
+                if (mBufferInfo.size != 0) {
                     count = 0;
-                    if(!mMuxerStarted){
+                    if (!mMuxerStarted) {
                         throw new RuntimeException("drain:muxer hasn't started");
                     }
                     mBufferInfo.presentationTimeUs = getPTSUs();
@@ -288,7 +314,7 @@ public abstract class MediaEncoder implements Runnable {
                     prevOutputPTSUs = mBufferInfo.presentationTimeUs;
                 }
                 mMediaCodec.releaseOutputBuffer(encoderStatus, false);
-                if((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0){
+                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     mIsCapturing = false;
                     break;
                 }
