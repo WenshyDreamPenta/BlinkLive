@@ -1,7 +1,9 @@
 package com.blink.live.blinkstreamlib.encoder;
 
+import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
+import android.media.MediaFormat;
 import android.opengl.EGLContext;
 import android.opengl.Matrix;
 import android.util.Log;
@@ -27,31 +29,30 @@ public class MediaVideoEncoder extends MediaEncoder {
 
     private final int mWidth;
     private final int mHeight;
-    private RenderHandler mRanderHandler;
+    private RenderHandler mRenderHandler;
     private Surface mSurface;
 
     private int previewW, previewH;
     private boolean isMatrixCalc = false;
     private float[] mvpMatrix = new float[]{
-             1, 0, 0, 0,
-             0, 1, 0, 0,
-             0, 0, 1, 0,
-             0, 0, 0, 1};
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1};
     private boolean isMatricCalc = false;
 
-    public MediaVideoEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener,
-            final int width, final int height) {
+    public MediaVideoEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener, final int width, final int height) {
         super(muxer, mediaEncoderListener);
         LogUtil.v(TAG, "MediaVideoEncoder: ");
         mWidth = width;
         mHeight = height;
-        mRanderHandler = RenderHandler.createHandler(TAG);
+        mRenderHandler = RenderHandler.createHandler(TAG);
     }
 
     public boolean frameAvailableSoon(final float[] tex_matrix) {
         boolean result;
         if (result = super.frameAvailableSoon()) {
-            mRanderHandler.draw(tex_matrix, mvpMatrix);
+            mRenderHandler.draw(tex_matrix, mvpMatrix);
         }
         return result;
     }
@@ -59,7 +60,7 @@ public class MediaVideoEncoder extends MediaEncoder {
     public boolean frameAvailableSoon(final float[] tex_matrix, final float[] mvp_matrix) {
         boolean result;
         if (result = super.frameAvailableSoon()) {
-            mRanderHandler.draw(tex_matrix, mvp_matrix);
+            mRenderHandler.draw(tex_matrix, mvp_matrix);
         }
         return result;
     }
@@ -68,7 +69,7 @@ public class MediaVideoEncoder extends MediaEncoder {
     public boolean frameAvailableSoon() {
         boolean result;
         if (result = super.frameAvailableSoon())
-            mRanderHandler.draw(null);
+            mRenderHandler.draw(null);
         return result;
     }
 
@@ -78,10 +79,42 @@ public class MediaVideoEncoder extends MediaEncoder {
         mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
         final MediaCodecInfo videoCodecInfo = selectVideoCodec(MIME_TYPE);
+        if(videoCodecInfo == null){
+            LogUtil.e(TAG, "Unable to find an appropriate codec for " + MIME_TYPE);
+            return;
+        }
+        LogUtil.i(TAG, "selected codec: " + videoCodecInfo.getName());
+        final MediaFormat format = MediaFormat.createAudioFormat(MIME_TYPE, mWidth, mHeight);
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);    // API >= 18
+        format.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate());
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 6);
+
+        LogUtil.i(TAG, "format: "+ format);
+        mMediaCodec = MediaCodec.createDecoderByType(MIME_TYPE);
+        mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        mSurface = mMediaCodec.createInputSurface();
+        mMediaCodec.start();
+
+        LogUtil.i(TAG, "prepare finishing");
+        if(mediaEncoderListener != null){
+            try {
+                mediaEncoderListener.onPrepared(this);
+            }
+            catch (Exception e) {
+                LogUtil.e(TAG, "prepare: " + e);
+            }
+        }
+    }
+
+    private int calcBitRate() {
+        final int bitrate = (int) (BPP * FRAME_RATE * mWidth * mHeight);
+        Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
+        return bitrate;
     }
 
     public void setEglContext(final EGLContext shared_context, final int tex_id) {
-        mRanderHandler.setEglContext(shared_context, tex_id, mSurface, true);
+        mRenderHandler.setEglContext(shared_context, tex_id, mSurface, true);
     }
 
     @Override
@@ -89,6 +122,20 @@ public class MediaVideoEncoder extends MediaEncoder {
         LogUtil.d(TAG, "sending EOS to encoder");
         mMediaCodec.signalEndOfInputStream();    // API >= 18
         mIsEOS = true;
+    }
+
+    @Override
+    public void release() {
+        LogUtil.i(TAG, "release:");
+        if (mSurface != null) {
+            mSurface.release();
+            mSurface = null;
+        }
+        if (mRenderHandler != null) {
+            mRenderHandler.release();
+            mRenderHandler = null;
+        }
+        super.release();
     }
 
     protected static MediaCodecInfo selectVideoCodec(final String mimeType) {
@@ -117,8 +164,7 @@ public class MediaVideoEncoder extends MediaEncoder {
      *
      * @return 0 if no colorFormat is matched
      */
-    protected static final int selectColorFormat(final MediaCodecInfo codecInfo,
-            final String mimeType) {
+    protected static final int selectColorFormat(final MediaCodecInfo codecInfo, final String mimeType) {
         LogUtil.v(TAG, "selectColorFormat: ");
         int result = 0;
         final MediaCodecInfo.CodecCapabilities caps;
@@ -140,8 +186,7 @@ public class MediaVideoEncoder extends MediaEncoder {
             }
         }
         if (result == 0) {
-            Log.e(TAG, "couldn't find a good color format for " + codecInfo.getName() + " / " +
-                    mimeType);
+            Log.e(TAG, "couldn't find a good color format for " + codecInfo.getName() + " / " + mimeType);
         }
         return result;
     }
@@ -199,12 +244,10 @@ public class MediaVideoEncoder extends MediaEncoder {
         float[] camera = new float[16];
 
         if (encodeWHRatio > previewWHRatio) {
-            Matrix.orthoM(projection, 0, -1, 1,
-                    -previewWHRatio / encodeWHRatio, previewWHRatio / encodeWHRatio, 1, 3);
+            Matrix.orthoM(projection, 0, -1, 1, -previewWHRatio / encodeWHRatio, previewWHRatio / encodeWHRatio, 1, 3);
         }
         else {
-            Matrix.orthoM(projection, 0,
-                    -encodeWHRatio / previewWHRatio, encodeWHRatio / previewWHRatio, -1, 1, 1, 3);
+            Matrix.orthoM(projection, 0, -encodeWHRatio / previewWHRatio, encodeWHRatio / previewWHRatio, -1, 1, 1, 3);
         }
         Matrix.setLookAtM(camera, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
         Matrix.multiplyMM(mvpMatrix, 0, projection, 0, camera, 0);
