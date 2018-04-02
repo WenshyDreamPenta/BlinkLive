@@ -1,5 +1,9 @@
 package com.blink.live.blinkstreamlib.encoder;
 
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
+import android.opengl.EGLContext;
+import android.opengl.Matrix;
 import android.util.Log;
 import android.view.Surface;
 
@@ -14,7 +18,7 @@ import java.io.IOException;
  *     desc   : MediaCodec Encoder
  * </pre>
  */
-public class MediaVideoEncoder extends MediaEncoder{
+public class MediaVideoEncoder extends MediaEncoder {
     private static final boolean DEBUG = false;
     private static final String TAG = "MediaVideoEncoder";
     private static final String MIME_TYPE = "video/avc";
@@ -26,20 +30,15 @@ public class MediaVideoEncoder extends MediaEncoder{
     private RenderHandler mRanderHandler;
     private Surface mSurface;
 
-    private int previwW, previewH;
-    private float[]  mvpMatrix = new float[]{
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-    };
+    private int previewW, previewH;
+    private boolean isMatrixCalc = false;
+    private float[] mvpMatrix = new float[]{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     private boolean isMatricCalc = false;
 
-    public MediaVideoEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener, final int width, final int
-            height) {
+    public MediaVideoEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener,
+            final int width, final int height) {
         super(muxer, mediaEncoderListener);
-        //todo:
-        if(DEBUG){
+        if (DEBUG) {
             Log.i(TAG, "MediaVideoEncoder: ");
         }
         mWidth = width;
@@ -47,25 +46,176 @@ public class MediaVideoEncoder extends MediaEncoder{
         mRanderHandler = RenderHandler.createHandler(TAG);
     }
 
+    public boolean frameAvailableSoon(final float[] tex_matrix) {
+        boolean result;
+        if (result = super.frameAvailableSoon()) {
+            mRanderHandler.draw(tex_matrix, mvpMatrix);
+        }
+        return result;
+    }
 
-
-
+    public boolean frameAvailableSoon(final float[] tex_matrix, final float[] mvp_matrix) {
+        boolean result;
+        if (result = super.frameAvailableSoon()) {
+            mRanderHandler.draw(tex_matrix, mvp_matrix);
+        }
+        return result;
+    }
 
     @Override
-    public void run() {
-
+    public boolean frameAvailableSoon() {
+        boolean result;
+        if (result = super.frameAvailableSoon())
+            mRanderHandler.draw(null);
+        return result;
     }
 
     @Override
     public void prepare() throws IOException {
+        if (DEBUG) {
+            Log.i(TAG, "prepare: ");
+        }
+        mTrackIndex = -1;
+        mMuxerStarted = mIsEOS = false;
+        final MediaCodecInfo videoCodecInfo = selectVideoCodec(MIME_TYPE);
+    }
 
+    public void setEglContext(final EGLContext shared_context, final int tex_id) {
+        mRanderHandler.setEglContext(shared_context, tex_id, mSurface, true);
     }
 
     @Override
-    void startRecording() {
+    protected void signalEndOfInputStream() {
+        if (DEBUG) {
+            Log.d(TAG, "sending EOS to encoder");
+        }
+        mMediaCodec.signalEndOfInputStream();    // API >= 18
+        mIsEOS = true;
     }
 
-    @Override
-    void stopRecording() {
+    protected static MediaCodecInfo selectVideoCodec(final String mimeType) {
+        final int numCodecs = MediaCodecList.getCodecCount();
+        for (int i = 0; i < numCodecs; i++) {
+            final MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
+            if (!codecInfo.isEncoder()) {
+                continue;
+            }
+            final String[] types = codecInfo.getSupportedTypes();
+            for (int j = 0; j < types.length; j++) {
+                if (types[j].equalsIgnoreCase(mimeType)) {
+                    if (DEBUG) {
+                        Log.i(TAG, "codec:" + codecInfo.getName() + ",MIME=" + types[j]);
+                    }
+                    final int format = selectColorFormat(codecInfo, mimeType);
+                    if (format > 0) {
+                        return codecInfo;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * select color format available on specific codec and we can use.
+     *
+     * @return 0 if no colorFormat is matched
+     */
+    protected static final int selectColorFormat(final MediaCodecInfo codecInfo,
+            final String mimeType) {
+        if (DEBUG) {
+            Log.i(TAG, "selectColorFormat: ");
+        }
+        int result = 0;
+        final MediaCodecInfo.CodecCapabilities caps;
+        try {
+            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+            caps = codecInfo.getCapabilitiesForType(mimeType);
+        }
+        finally {
+            Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
+        }
+        int colorFormat;
+        for (int i = 0; i < caps.colorFormats.length; i++) {
+            colorFormat = caps.colorFormats[i];
+            if (isRecognizedViewoFormat(colorFormat)) {
+                if (result == 0) {
+                    result = colorFormat;
+                }
+                break;
+            }
+        }
+        if (result == 0) {
+            Log.e(TAG, "couldn't find a good color format for " + codecInfo.getName() + " / " +
+                    mimeType);
+        }
+        return result;
+    }
+
+    /**
+     * color formats that we can use in this class
+     */
+    protected static int[] recognizedFormats;
+
+    static {
+        recognizedFormats = new int[]{
+                //        	MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar,
+                //        	MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
+                //        	MediaCodecInfo.CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
+                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface};
+    }
+
+    private static boolean isRecognizedViewoFormat(final int colorFormat) {
+        if (DEBUG)
+            Log.i(TAG, "isRecognizedViewoFormat:colorFormat=" + colorFormat);
+        final int n = recognizedFormats != null ? recognizedFormats.length : 0;
+        for (int i = 0; i < n; i++) {
+            if (recognizedFormats[i] == colorFormat) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * set preview size
+     * @param previewW width
+     * @param previewH height
+     */
+    public void setPreviewWH(int previewW, int previewH) {
+        this.previewW = previewW;
+        this.previewH = previewH;
+    }
+
+    /**
+     * get mvp matrix
+     * @return float[] mvp matrix
+     */
+    public float[] getMvpMatrix() {
+        if (previewW < 1 || previewH < 1)
+            return null;
+        if (isMatrixCalc)
+            return mvpMatrix;
+
+        float encodeWHRatio = mWidth * 1.0f / mHeight;
+        float previewWHRatio = previewW * 1.0f / previewH;
+
+        float[] projection = new float[16];
+        float[] camera = new float[16];
+
+        if (encodeWHRatio > previewWHRatio) {
+            Matrix.orthoM(projection, 0, -1, 1,
+                    -previewWHRatio / encodeWHRatio, previewWHRatio / encodeWHRatio, 1, 3);
+        }
+        else {
+            Matrix.orthoM(projection, 0,
+                    -encodeWHRatio / previewWHRatio, encodeWHRatio / previewWHRatio, -1, 1, 1, 3);
+        }
+        Matrix.setLookAtM(camera, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+        Matrix.multiplyMM(mvpMatrix, 0, projection, 0, camera, 0);
+
+        isMatrixCalc = true;
+
+        return mvpMatrix;
     }
 }
