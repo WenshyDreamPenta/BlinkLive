@@ -122,7 +122,7 @@ public class GLDrawer2D {
      */
     public static int initTex() {
         if (DEBUG)
-            Log.v(TAG, "initTex:");
+            LogUtil.v(TAG, "initTex:");
         final int[] tex = new int[1];
         GLES20.glGenTextures(1, tex, 0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, tex[0]);
@@ -138,7 +138,7 @@ public class GLDrawer2D {
      */
     public static void deleteTex(final int hTex) {
         if (DEBUG)
-            Log.v(TAG, "deleteTex:");
+            LogUtil.v(TAG, "deleteTex:");
         final int[] tex = new int[]{hTex};
         GLES20.glDeleteTextures(1, tex, 0);
     }
@@ -152,7 +152,7 @@ public class GLDrawer2D {
      */
     public static int loadShader(final String vss, final String fss) {
         if (DEBUG)
-            Log.v(TAG, "loadShader:");
+            LogUtil.v(TAG, "loadShader:");
         int vs = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
         GLES20.glShaderSource(vs, vss);
         GLES20.glCompileShader(vs);

@@ -52,7 +52,7 @@ public class FileUtil {
      */
     public static  File getCaptureFile(final String type, final String ext, String dirName) {
         final File dir = new File(Environment.getExternalStoragePublicDirectory(type), dirName);
-        Log.d(TAG, "path = " + dir.toString());
+        LogUtil.d(TAG, "path = " + dir.toString());
         dir.mkdirs();
         if (dir.canWrite()) {
             return new File(dir, getDateTimeString() + ext);

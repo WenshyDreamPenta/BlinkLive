@@ -4,6 +4,8 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import com.blink.live.blinkstreamlib.utils.LogUtil;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -16,7 +18,6 @@ import java.nio.ByteBuffer;
  * </pre>
  */
 public abstract class MediaEncoder implements Runnable {
-    private static final boolean DEBUG = false;
     private static final String TAG = "MediaEncoder";
     protected static final int TIMEOUT_USEC = 10000;
     protected static final int MSG_FRAME_AVAILABLE = 1;
@@ -129,9 +130,7 @@ public abstract class MediaEncoder implements Runnable {
                 }
             }
         }
-        if (DEBUG) {
-            Log.d(TAG, "Encoder thread exiting");
-        }
+        LogUtil.d(TAG, "Encoder thread exiting");
         synchronized (SyncO) {
             mIsCapturing = false;
             mRequestStop = true;
@@ -139,9 +138,7 @@ public abstract class MediaEncoder implements Runnable {
     }
 
     void startRecording() {
-        if (DEBUG) {
-            Log.v(TAG, "startRecording");
-        }
+        LogUtil.v(TAG, "startRecording");
         synchronized (SyncO) {
             mIsCapturing = true;
             mRequestStop = false;
@@ -150,9 +147,7 @@ public abstract class MediaEncoder implements Runnable {
     }
 
     void stopRecording() {
-        if (DEBUG) {
-            Log.v(TAG, "stopRecording");
-        }
+        LogUtil.v(TAG, "stopRecording");
         synchronized (SyncO) {
             if (!mIsCapturing || mRequestStop) {
                 return;
@@ -163,8 +158,7 @@ public abstract class MediaEncoder implements Runnable {
     }
 
     protected void signalEndOfInputStream() {
-        if (DEBUG)
-            Log.d(TAG, "sending EOS to encoder");
+        LogUtil.d(TAG, "sending EOS to encoder");
         // signalEndOfInputStream is only avairable for video encoding with surface
         // and equivalent sending a empty buffer with BUFFER_FLAG_END_OF_STREAM flag.
         //		mMediaCodec.signalEndOfInputStream();	// API >= 18
@@ -172,9 +166,7 @@ public abstract class MediaEncoder implements Runnable {
     }
 
     public void release() {
-        if (DEBUG) {
-            Log.d(TAG, "release: ");
-        }
+        LogUtil.d(TAG, "release: ");
         try {
             mediaEncoderListener.onStopped(this);
         }
@@ -221,21 +213,17 @@ public abstract class MediaEncoder implements Runnable {
         final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
         while (mIsCapturing) {
             final int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_USEC);
-            Log.d(TAG, "inputBufferIndex: " + inputBufferIndex);
+            LogUtil.d(TAG, "inputBufferIndex: " + inputBufferIndex);
             if (inputBufferIndex >= 0) {
                 final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
                 inputBuffer.clear();
                 if (buffer != null) {
                     inputBuffer.put(buffer);
                 }
-                if (DEBUG) {
-                    Log.v(TAG, "encode:queueInputBuffer");
-                }
+                LogUtil.v(TAG, "encode:queueInputBuffer");
                 if (length <= 0) {
                     mIsEOS = true;
-                    if (DEBUG) {
-                        Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
-                    }
+                    LogUtil.v(TAG, "send BUFFER_FLAG_END_OF_STREAM");
                     mMediaCodec.queueInputBuffer(inputBufferIndex, 0, 0, presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                     break;
                 }
@@ -291,9 +279,8 @@ public abstract class MediaEncoder implements Runnable {
                 }
             }
             else if (encoderStatus < 0) {
-                if (DEBUG)
-                    Log.w(TAG, "drain:unexpected result from encoder#dequeueOutputBuffer: " +
-                            encoderStatus);
+                Log.w(TAG, "drain:unexpected result from encoder#dequeueOutputBuffer: " +
+                        encoderStatus);
             }
             else {
                 final ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
@@ -329,8 +316,7 @@ public abstract class MediaEncoder implements Runnable {
      * @return return true if encoder is ready to encod.
      */
     public boolean frameAvailableSoon() {
-        if (DEBUG)
-            Log.v(TAG, "frameAvailableSoon");
+        LogUtil.v(TAG, "frameAvailableSoon");
         synchronized (SyncO) {
             if (!mIsCapturing || mRequestStop) {
                 return false;

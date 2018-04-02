@@ -33,7 +33,7 @@ public final class RenderHandler implements Runnable {
 
     public static RenderHandler createHandler(final String name) {
         if (DEBUG) {
-            Log.v(TAG, "createHandler:");
+            LogUtil.v(TAG, "createHandler:");
         }
         final RenderHandler handler = new RenderHandler();
         synchronized (handler.mSync) {
@@ -50,7 +50,7 @@ public final class RenderHandler implements Runnable {
     public final void setEglContext(final EGLContext shared_context, final int tex_id, final Object surface,
             final boolean isRecordable) {
         if (DEBUG)
-            Log.i(TAG, "setEglContext:");
+            LogUtil.v(TAG, "setEglContext:");
         if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture) && !(surface instanceof SurfaceHolder))
             throw new RuntimeException("unsupported window type:" + surface);
         synchronized (mSync) {
@@ -122,7 +122,7 @@ public final class RenderHandler implements Runnable {
 
     public final void release() {
         if (DEBUG)
-            Log.i(TAG, "release:");
+            LogUtil.v(TAG, "release:");
         synchronized (mSync) {
             if (mRequestRelease)
                 return;
@@ -145,7 +145,7 @@ public final class RenderHandler implements Runnable {
     @Override
     public final void run() {
         if (DEBUG)
-            Log.i(TAG, "RenderHandler thread started:");
+            LogUtil.v(TAG, "RenderHandler thread started:");
         synchronized (mSync) {
             mRequestSetEglContext = mRequestRelease = false;
             mRequestDraw = 0;
@@ -194,12 +194,12 @@ public final class RenderHandler implements Runnable {
             mSync.notifyAll();
         }
         if (DEBUG)
-            Log.i(TAG, "RenderHandler thread finished:");
+            LogUtil.v(TAG, "RenderHandler thread finished:");
     }
 
     private final void internalPrepare() {
         if (DEBUG)
-            Log.i(TAG, "internalPrepare:");
+            LogUtil.v(TAG, "internalPrepare:");
         internalRelease();
         mEgl = new EGLBase(mShard_context, false, mIsRecordable);
 
@@ -213,7 +213,7 @@ public final class RenderHandler implements Runnable {
 
     private final void internalRelease() {
         if (DEBUG)
-            Log.i(TAG, "internalRelease:");
+            LogUtil.v(TAG, "internalRelease:");
         if (mInputSurface != null) {
             mInputSurface.release();
             mInputSurface = null;

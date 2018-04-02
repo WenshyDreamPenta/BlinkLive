@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.blink.live.blinkstreamlib.encoder.utils.RenderHandler;
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.io.IOException;
 
@@ -19,7 +20,6 @@ import java.io.IOException;
  * </pre>
  */
 public class MediaVideoEncoder extends MediaEncoder {
-    private static final boolean DEBUG = false;
     private static final String TAG = "MediaVideoEncoder";
     private static final String MIME_TYPE = "video/avc";
     private static final int FRAME_RATE = 24;
@@ -32,15 +32,17 @@ public class MediaVideoEncoder extends MediaEncoder {
 
     private int previewW, previewH;
     private boolean isMatrixCalc = false;
-    private float[] mvpMatrix = new float[]{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    private float[] mvpMatrix = new float[]{
+             1, 0, 0, 0,
+             0, 1, 0, 0,
+             0, 0, 1, 0,
+             0, 0, 0, 1};
     private boolean isMatricCalc = false;
 
     public MediaVideoEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener,
             final int width, final int height) {
         super(muxer, mediaEncoderListener);
-        if (DEBUG) {
-            Log.i(TAG, "MediaVideoEncoder: ");
-        }
+        LogUtil.v(TAG, "MediaVideoEncoder: ");
         mWidth = width;
         mHeight = height;
         mRanderHandler = RenderHandler.createHandler(TAG);
@@ -72,9 +74,7 @@ public class MediaVideoEncoder extends MediaEncoder {
 
     @Override
     public void prepare() throws IOException {
-        if (DEBUG) {
-            Log.i(TAG, "prepare: ");
-        }
+        LogUtil.v(TAG, "prepare: ");
         mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
         final MediaCodecInfo videoCodecInfo = selectVideoCodec(MIME_TYPE);
@@ -86,9 +86,7 @@ public class MediaVideoEncoder extends MediaEncoder {
 
     @Override
     protected void signalEndOfInputStream() {
-        if (DEBUG) {
-            Log.d(TAG, "sending EOS to encoder");
-        }
+        LogUtil.d(TAG, "sending EOS to encoder");
         mMediaCodec.signalEndOfInputStream();    // API >= 18
         mIsEOS = true;
     }
@@ -103,9 +101,7 @@ public class MediaVideoEncoder extends MediaEncoder {
             final String[] types = codecInfo.getSupportedTypes();
             for (int j = 0; j < types.length; j++) {
                 if (types[j].equalsIgnoreCase(mimeType)) {
-                    if (DEBUG) {
-                        Log.i(TAG, "codec:" + codecInfo.getName() + ",MIME=" + types[j]);
-                    }
+                    LogUtil.v(TAG, "codec:" + codecInfo.getName() + ",MIME=" + types[j]);
                     final int format = selectColorFormat(codecInfo, mimeType);
                     if (format > 0) {
                         return codecInfo;
@@ -123,9 +119,7 @@ public class MediaVideoEncoder extends MediaEncoder {
      */
     protected static final int selectColorFormat(final MediaCodecInfo codecInfo,
             final String mimeType) {
-        if (DEBUG) {
-            Log.i(TAG, "selectColorFormat: ");
-        }
+        LogUtil.v(TAG, "selectColorFormat: ");
         int result = 0;
         final MediaCodecInfo.CodecCapabilities caps;
         try {
@@ -166,8 +160,7 @@ public class MediaVideoEncoder extends MediaEncoder {
     }
 
     private static boolean isRecognizedViewoFormat(final int colorFormat) {
-        if (DEBUG)
-            Log.i(TAG, "isRecognizedViewoFormat:colorFormat=" + colorFormat);
+        LogUtil.v(TAG, "isRecognizedViewoFormat:colorFormat=" + colorFormat);
         final int n = recognizedFormats != null ? recognizedFormats.length : 0;
         for (int i = 0; i < n; i++) {
             if (recognizedFormats[i] == colorFormat) {
@@ -179,6 +172,7 @@ public class MediaVideoEncoder extends MediaEncoder {
 
     /**
      * set preview size
+     *
      * @param previewW width
      * @param previewH height
      */
@@ -189,6 +183,7 @@ public class MediaVideoEncoder extends MediaEncoder {
 
     /**
      * get mvp matrix
+     *
      * @return float[] mvp matrix
      */
     public float[] getMvpMatrix() {

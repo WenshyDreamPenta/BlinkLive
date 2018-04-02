@@ -1,7 +1,6 @@
 package com.blink.live.blinkstreamlib.utils;
 
 
-
 import android.util.Log;
 
 import java.io.PrintWriter;
@@ -28,11 +27,39 @@ public class LogUtil {
         Log.e(TAG, content);
     }
 
+    public static void e(String Tag, String content){
+        if (!enableLog) {
+            return;
+        }
+        Log.e(Tag, content);
+    }
+
     public static void d(String content) {
         if (!enableLog) {
             return;
         }
-        Log.d(TAG, content);
+        LogUtil.d(TAG, content);
+    }
+
+    public static void d(String Tag, String content){
+        if (!enableLog) {
+            return;
+        }
+        LogUtil.d(Tag, content);
+    }
+
+    public static void i(String Tag, String content){
+        if (!enableLog) {
+            return;
+        }
+        LogUtil.i(Tag, content);
+    }
+
+    public static void v(String Tag, String content){
+        if (!enableLog) {
+            return;
+        }
+        LogUtil.v(Tag, content);
     }
 
     public static void trace(String msg) {
