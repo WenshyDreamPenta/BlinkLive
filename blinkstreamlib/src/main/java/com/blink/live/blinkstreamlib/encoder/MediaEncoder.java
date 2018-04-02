@@ -324,6 +324,24 @@ public abstract class MediaEncoder implements Runnable {
     }
 
     /**
+     * the method to indicate frame data is soon available or already available
+     *
+     * @return return true if encoder is ready to encod.
+     */
+    public boolean frameAvailableSoon() {
+        if (DEBUG)
+            Log.v(TAG, "frameAvailableSoon");
+        synchronized (SyncO) {
+            if (!mIsCapturing || mRequestStop) {
+                return false;
+            }
+            mRequestDrain++;
+            SyncO.notifyAll();
+        }
+        return true;
+    }
+
+    /**
      * get next encoding presentationTimeUs
      *
      * @return
