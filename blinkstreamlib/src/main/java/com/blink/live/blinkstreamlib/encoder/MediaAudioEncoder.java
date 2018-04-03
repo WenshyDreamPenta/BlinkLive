@@ -20,22 +20,21 @@ import java.nio.ByteBuffer;
  *     desc   : Audio Media Encoder
  * </pre>
  */
-public class MediaAudioEncoder  extends MediaEncoder{
+public class MediaAudioEncoder extends MediaEncoder {
     private static final String TAG = "MediaAudioEncoder";
     private static final String MIME_TYPE = "audio/mp4a-latm";
     private static final int SAMPLE_RATE = 44100;
-    private static final int BIT_RATE =64000;
-    public static final int SAMPLES_PER_FRAME = 1024;
-    public static final int FRAMES_PER_BUFFER = 25;
+    private static final int BIT_RATE = 64000;
+    private static final int SAMPLES_PER_FRAME = 1024;
+    private static final int FRAMES_PER_BUFFER = 25;
 
     private AudioThread audioThread;
-    private static final int[] AUDIO_SOURCES = new int[] {
+    private static final int[] AUDIO_SOURCES = new int[]{
             MediaRecorder.AudioSource.MIC,
             MediaRecorder.AudioSource.DEFAULT,
             MediaRecorder.AudioSource.CAMCORDER,
             MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
-    };
+            MediaRecorder.AudioSource.VOICE_RECOGNITION};
 
     public MediaAudioEncoder(MediaMuxerWrapper muxer, MediaEncoderListener mediaEncoderListener) {
         super(muxer, mediaEncoderListener);
@@ -68,12 +67,13 @@ public class MediaAudioEncoder  extends MediaEncoder{
                 e.printStackTrace();
             }
         }
+        LogUtil.v(TAG, "prepare: finished");
     }
 
     @Override
     void startRecording() {
         super.startRecording();
-        if(audioThread == null){
+        if (audioThread == null) {
             audioThread = new AudioThread();
             audioThread.start();
         }
@@ -96,36 +96,35 @@ public class MediaAudioEncoder  extends MediaEncoder{
             try {
                 final int min_buffer_size = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
                 int buffer_size = SAMPLES_PER_FRAME * FRAMES_PER_BUFFER;
-                if(buffer_size < min_buffer_size){
+                if (buffer_size < min_buffer_size) {
                     buffer_size = ((min_buffer_size / SAMPLES_PER_FRAME) + 1) * SAMPLES_PER_FRAME * 2;
                 }
-
                 AudioRecord audioRecord = null;
-                for(final int source : AUDIO_SOURCES){
-                    try{
+                for (final int source : AUDIO_SOURCES) {
+                    try {
                         audioRecord = new AudioRecord(source, SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, buffer_size);
-                        if(audioRecord.getState() != AudioRecord.STATE_INITIALIZED){
+                        if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                             audioRecord = null;
                         }
                     }
-                    catch (Exception e){
+                    catch (Exception e) {
                         audioRecord = null;
                     }
-                    if(audioRecord != null){
+                    if (audioRecord != null) {
                         break;
                     }
                 }
-                if(audioRecord != null){
-                    try{
-                        if(mIsCapturing){
+                if (audioRecord != null) {
+                    try {
+                        if (mIsCapturing) {
                             final ByteBuffer buf = ByteBuffer.allocateDirect(SAMPLES_PER_FRAME);
                             int readBytes;
                             audioRecord.startRecording();
-                            try{
-                                for(; mIsCapturing && !mRequestStop && !mIsEOS ;){
+                            try {
+                                for (; mIsCapturing && !mRequestStop && !mIsEOS; ) {
                                     buf.clear();
                                     readBytes = audioRecord.read(buf, SAMPLES_PER_FRAME);
-                                    if(readBytes > 0){
+                                    if (readBytes > 0) {
                                         buf.position(readBytes);
                                         buf.flip();
                                         encode(buf, readBytes, getPTSUs());
@@ -139,7 +138,8 @@ public class MediaAudioEncoder  extends MediaEncoder{
                             }
                         }
 
-                    }finally {
+                    }
+                    finally {
                         audioRecord.release();
                     }
                 }
