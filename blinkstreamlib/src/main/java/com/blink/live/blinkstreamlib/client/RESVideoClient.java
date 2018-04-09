@@ -13,6 +13,8 @@ import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 import com.blink.live.blinkstreamlib.tools.CameraTools;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
+import java.util.List;
+
 /**
  * <pre>
  *     author : wangmingxing
@@ -284,4 +286,31 @@ public class RESVideoClient {
         }
     }
 
+    public boolean toggleFlashLight(){
+        synchronized (syncOp){
+            try{
+                Camera.Parameters parameters = mCamera.getParameters();
+                List<String> flashModes = parameters.getSupportedFlashModes();
+                String flashMode = parameters.getFlashMode();
+                if(!Camera.Parameters.FLASH_MODE_TORCH.equals(flashMode)){
+                    if(flashMode.contains(Camera.Parameters.FLASH_MODE_TORCH)){
+                        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                        mCamera.setParameters(parameters);
+                        return true;
+                    }
+                }
+                else if(!Camera.Parameters.FLASH_MODE_OFF.equals(flashMode)){
+                    if(flashModes.contains(Camera.Parameters.FLASH_MODE_OFF)){
+                        parameters.setFlashMode(Camera.Parameters.ANTIBANDING_OFF);
+                        mCamera.setParameters(parameters);
+                        return true;
+                    }
+                }
+            }catch(Exception e){
+                return false;
+            }
+            return false;
+        }
+    }
+    //todo: setZoomByPercent
 }
