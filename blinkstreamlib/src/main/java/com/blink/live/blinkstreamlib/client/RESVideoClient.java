@@ -9,6 +9,7 @@ import com.blink.live.blinkstreamlib.core.RESVideoCore;
 import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.model.RESize;
+import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
 import com.blink.live.blinkstreamlib.tools.CameraTools;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
@@ -220,5 +221,67 @@ public class RESVideoClient {
         }
     }
 
-    
+    public boolean startStreaming(RESFlvDataCollecter flvDataCollecter){
+        synchronized (syncOp){
+            if (!isStreaming && !isPreviewing) {
+                if (!startVideo()) {
+                    mRESCoreParameters.dump();
+                    LogUtil.e("RESVideoClient,start(),failed");
+                    return false;
+                }
+                resVideoCore.updateCamTexture(camTexture);
+            }
+            resVideoCore.startStreaming(flvDataCollecter);
+            isStreaming = true;
+            return true;
+        }
+    }
+
+    public boolean stopStreaming(){
+        if (isStreaming) {
+            resVideoCore.stopStreaming();
+            if (!isPreviewing) {
+                mCamera.stopPreview();
+                resVideoCore.updateCamTexture(null);
+                camTexture.release();
+            }
+        }
+        isStreaming = false;
+        return true;
+    }
+
+    public boolean destroy(){
+        synchronized (syncOp){
+            mCamera.release();
+            resVideoCore.destroy();
+            resVideoCore = null;
+            mCamera = null;
+            return true;
+        }
+    }
+
+    public boolean swtichCamera(){
+        synchronized (syncOp){
+            mCamera.stopPreview();
+            mCamera.release();
+            mCamera  = null;
+            if(null == (mCamera = createCamera(curentCameraIndex = (++curentCameraIndex)%
+                    cameraNum))){
+                return false;
+            }
+            resVideoCore.setCurrentCamera(curentCameraIndex);
+            CameraTools.selectCameraFpsRange(mCamera.getParameters(), mRESCoreParameters);
+            if(!CameraTools.configCamera(mCamera, mRESCoreParameters)){
+                mCamera.release();
+                return false;
+            }
+            prepareVideo();
+            camTexture.release();
+            resVideoCore.updateCamTexture(null);
+            startVideo();
+            resVideoCore.updateCamTexture(camTexture);
+            return true;
+        }
+    }
+
 }
