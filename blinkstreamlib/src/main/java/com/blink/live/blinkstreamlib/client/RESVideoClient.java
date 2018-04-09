@@ -20,6 +20,8 @@ import com.blink.live.blinkstreamlib.utils.LogUtil;
  * </pre>
  */
 public class RESVideoClient {
+    public RESVideoClient videoClient;
+
     private RESCoreParameters mRESCoreParameters;
     private final Object syncOp = new Object();
     private Camera mCamera;
@@ -146,4 +148,77 @@ public class RESVideoClient {
         return true;
     }
 
+    //start Video codec
+    private boolean startVideo(){
+        camTexture = new SurfaceTexture(RESVideoCore.OVERWATCH_TEXTURE_ID);
+        if(mRESCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT){
+            //soft codec
+            mCamera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
+                @Override
+                public void onPreviewFrame(byte[] data, Camera camera) {
+                    synchronized (syncOp){
+                        if(resVideoCore != null && data != null){
+                            ((RESSoftVideoCore) resVideoCore).queueVideo(data);
+                        }
+                    }
+                }
+            });
+        }
+        else{
+            camTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+                @Override
+                public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                    //todo： hard codec
+                }
+            });
+        }
+        try{
+            mCamera.setPreviewTexture(camTexture);
+        }catch (Exception e){
+            LogUtil.trace(e);
+            mCamera.release();
+            return false;
+        }
+
+        mCamera.startPreview();
+        return true;
+    }
+
+    public boolean startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight){
+        synchronized (syncOp){
+            if(!isStreaming && !isPreviewing){
+                if(!startVideo()){
+                    mRESCoreParameters.dump();
+                    LogUtil.e("RESVideoClient,start(),failed");
+                    return false;
+                }
+                resVideoCore.updateCamTexture(camTexture);
+            }
+            resVideoCore.startPreview(surfaceTexture, visualWidth, visualHeight);
+            isPreviewing = true;
+
+            return true;
+        }
+    }
+
+    public void updatePreview(int visualWidth, int visualHeight){
+        resVideoCore.updatePreview(visualWidth, visualHeight);
+    }
+
+    public boolean stopPreview(boolean releaseTexture){
+        synchronized (syncOp){
+            if(isPreviewing){
+                resVideoCore.stopPreview(releaseTexture);
+                if(!isStreaming){
+                    mCamera.stopPreview();
+                    resVideoCore.updateCamTexture(null);
+                    camTexture.release();
+                }
+            }
+            isPreviewing = false;
+            return true;
+        }
+    }
+
+    
 }
