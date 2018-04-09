@@ -13,6 +13,8 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.blink.live.blinkstreamlib.utils.LogUtil;
+
 /**
  * <pre>
  *     author : wangmingxing

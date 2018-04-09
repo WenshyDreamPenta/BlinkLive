@@ -5,9 +5,10 @@ import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+
+import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 /**
  * <pre>
