@@ -128,10 +128,11 @@ public class RESVideoClient {
             });
         }
         else{
+            //todo： hard codec
             camTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-                    //todo： hard codec
+
                 }
             });
         }
