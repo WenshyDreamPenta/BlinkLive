@@ -537,4 +537,6 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
             lockVideoFilter.unlock();
         }
     }
+
+
 }
