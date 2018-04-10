@@ -10,6 +10,7 @@ import com.blink.live.blinkstreamlib.model.RESConfig;
 import com.blink.live.blinkstreamlib.model.RESCoreParameters;
 import com.blink.live.blinkstreamlib.model.RESize;
 import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
+import com.blink.live.blinkstreamlib.tools.BuffSizeCalculator;
 import com.blink.live.blinkstreamlib.tools.CameraTools;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
@@ -313,4 +314,98 @@ public class RESVideoClient {
         }
     }
     //todo: setZoomByPercent
+
+    /**
+     * 设置缩放百分比
+     * @param targetPercent 百分比数值
+     * @return true/false;
+     */
+    public boolean setZoomByPercent(float targetPercent){
+        synchronized (syncOp){
+            targetPercent = Math.min(Math.max(0f, targetPercent), 1f);
+            Camera.Parameters parameters = mCamera.getParameters();
+            parameters.setZoom((int) (parameters.getMaxZoom() * targetPercent));
+            mCamera.setParameters(parameters);
+
+            return true;
+        }
+    }
+
+    /**
+     * 重置视频码率
+     * @param bitrate 码率值
+     */
+    public void reSetVideoBitrate(int bitrate){
+        synchronized (syncOp){
+            if(resVideoCore != null){
+                resVideoCore.reSetVideoBitrate(bitrate);
+            }
+        }
+    }
+
+    /**
+     * 重置视频FPS
+     * @param fps fps数值
+     */
+    public void reSetVideoFPS(int fps){
+        synchronized (syncOp){
+            int targetFps;
+            if(fps > mRESCoreParameters.previewMaxFps / 1000){
+                targetFps = mRESCoreParameters.previewMaxFps / 1000;
+            }
+            else {
+                targetFps = fps;
+            }
+            if(resVideoCore != null){
+                resVideoCore.reSetVideoFPS(targetFps);
+            }
+        }
+    }
+
+    /**
+     * 重置视频尺寸
+     * @param targetSize 目标尺寸
+     * @return boolean
+     */
+    public boolean reSetVideoSize(RESize targetSize) {
+        synchronized (syncOp) {
+            RESCoreParameters newParameters = new RESCoreParameters();
+            newParameters.isPortrait = mRESCoreParameters.isPortrait;
+            newParameters.filterMode = mRESCoreParameters.filterMode;
+            Camera.Parameters parameters = mCamera.getParameters();
+            CameraTools.selectCameraPreviewWH(parameters, newParameters, targetSize);
+            resolveResolution(newParameters, targetSize);
+            boolean needRestartCamera = (
+                    newParameters.previewVideoHeight != mRESCoreParameters.previewVideoHeight ||
+                            newParameters.previewVideoWidth !=
+                                    mRESCoreParameters.previewVideoWidth);
+            if (needRestartCamera) {
+                newParameters.previewBufferSize = BuffSizeCalculator.calculator(mRESCoreParameters.previewVideoWidth,
+                        mRESCoreParameters.previewVideoHeight, mRESCoreParameters.previewColorFormat);
+                mRESCoreParameters.previewVideoWidth = newParameters.previewVideoWidth;
+                mRESCoreParameters.previewVideoHeight = newParameters.previewVideoHeight;
+                mRESCoreParameters.previewBufferSize  = newParameters.previewBufferSize;
+                if((isStreaming || isPreviewing)){
+                    mCamera.stopPreview();
+                    mCamera.release();
+                    mCamera = null;
+                    if(null == (createCamera(curentCameraIndex))){
+                        return false;
+                    }
+                    if(!CameraTools.configCamera(mCamera, mRESCoreParameters)){
+                        mCamera.release();
+                        return false;
+                    }
+                    prepareVideo();
+                    resVideoCore.updateCamTexture(null);
+                    camTexture.release();
+                    startVideo();
+                    resVideoCore.updateCamTexture(camTexture);
+                }
+            }
+            resVideoCore.reSetVideoSize(newParameters);
+            return true;
+        }
+    }
+
 }
