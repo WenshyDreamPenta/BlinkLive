@@ -14,8 +14,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
-import com.blink.live.blinkstreamlib.core.listeners.StreamScreenShotListener;
-import com.blink.live.blinkstreamlib.core.listeners.StreamVideoChangeListener;
+import com.blink.live.blinkstreamlib.core.listener.StreamScreenShotListener;
+import com.blink.live.blinkstreamlib.core.listener.StreamVideoChangeListener;
 import com.blink.live.blinkstreamlib.core.thread.VideoSenderThread;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
 import com.blink.live.blinkstreamlib.filter.BaseSoftVideoFilter;

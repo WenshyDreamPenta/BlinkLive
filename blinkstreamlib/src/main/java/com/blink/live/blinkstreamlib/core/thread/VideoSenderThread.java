@@ -27,7 +27,7 @@ public class VideoSenderThread extends Thread {
     private StreamFlvDataCollecter dataCollecter;
     private boolean shouldQuit = false;
 
-    VideoSenderThread(String name, MediaCodec encoder, StreamFlvDataCollecter flvDataCollecter) {
+    public VideoSenderThread(String name, MediaCodec encoder, StreamFlvDataCollecter flvDataCollecter) {
         super(name);
         eInfo = new MediaCodec.BufferInfo();
         startTime = 0;

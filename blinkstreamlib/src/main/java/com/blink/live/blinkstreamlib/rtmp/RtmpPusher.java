@@ -7,7 +7,7 @@ import android.os.Looper;
 import android.os.Message;
 import com.blink.live.blinkstreamlib.core.StreamByteSpeedometer;
 import com.blink.live.blinkstreamlib.core.StreamFrameRateMeter;
-import com.blink.live.blinkstreamlib.core.listeners.StreamConnectionListener;
+import com.blink.live.blinkstreamlib.core.listener.StreamConnectionListener;
 import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
 import com.blink.live.blinkstreamlib.tools.CallbackDelivery;
 import com.blink.live.blinkstreamlib.utils.LogUtil;

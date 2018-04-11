@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.core.listeners;
+package com.blink.live.blinkstreamlib.core.listener;
 
 /**
  * <pre>
@@ -7,5 +7,5 @@ package com.blink.live.blinkstreamlib.core.listeners;
  *     desc   :
  * </pre>
  */
-public interface StreamScreenShotListener {
+public interface StreamVideoChangeListener {
 }

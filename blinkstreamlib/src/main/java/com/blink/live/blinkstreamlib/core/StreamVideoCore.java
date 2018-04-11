@@ -2,8 +2,8 @@ package com.blink.live.blinkstreamlib.core;
 
 import android.graphics.SurfaceTexture;
 
-import com.blink.live.blinkstreamlib.core.listeners.StreamScreenShotListener;
-import com.blink.live.blinkstreamlib.core.listeners.StreamVideoChangeListener;
+import com.blink.live.blinkstreamlib.core.listener.StreamScreenShotListener;
+import com.blink.live.blinkstreamlib.core.listener.StreamVideoChangeListener;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
 import com.blink.live.blinkstreamlib.model.StreamConfig;
 import com.blink.live.blinkstreamlib.model.StreamCoreParameters;

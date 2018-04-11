@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.core.listeners;
+package com.blink.live.blinkstreamlib.core.listener;
 
 /**
  * <pre>
