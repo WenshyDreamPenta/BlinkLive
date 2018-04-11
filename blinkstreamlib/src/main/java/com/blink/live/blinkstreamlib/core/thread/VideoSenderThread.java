@@ -1,11 +1,12 @@
-package com.blink.live.blinkstreamlib.core;
+package com.blink.live.blinkstreamlib.core.thread;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 
-import com.blink.live.blinkstreamlib.rtmp.RESFlvData;
-import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
-import com.blink.live.blinkstreamlib.rtmp.RESRtmpPusher;
+import com.blink.live.blinkstreamlib.core.PackagerCodec;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvData;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
+import com.blink.live.blinkstreamlib.rtmp.RtmpPusher;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.nio.ByteBuffer;
@@ -23,10 +24,10 @@ public class VideoSenderThread extends Thread {
     private long startTime = 0;
     private MediaCodec dstVideoEncoder;
     private final Object syncDstVideoEncoder = new Object();
-    private RESFlvDataCollecter dataCollecter;
+    private StreamFlvDataCollecter dataCollecter;
     private boolean shouldQuit = false;
 
-    VideoSenderThread(String name, MediaCodec encoder, RESFlvDataCollecter flvDataCollecter) {
+    VideoSenderThread(String name, MediaCodec encoder, StreamFlvDataCollecter flvDataCollecter) {
         super(name);
         eInfo = new MediaCodec.BufferInfo();
         startTime = 0;
@@ -42,7 +43,7 @@ public class VideoSenderThread extends Thread {
     }
 
     //退出线程
-    void quit() {
+    public void quit() {
         shouldQuit = true;
         this.interrupt();
     }
@@ -104,14 +105,14 @@ public class VideoSenderThread extends Thread {
         byte[] finalBuff = new byte[packetLen];
         PackagerCodec.FlvPackager.fillFlvVideoTag(finalBuff, 0, true, true, AVCDecoderConfigurationRecord.length);
         System.arraycopy(AVCDecoderConfigurationRecord, 0, finalBuff, PackagerCodec.FlvPackager.FLV_VIDEO_TAG_LENGTH, AVCDecoderConfigurationRecord.length);
-        RESFlvData resFlvData = new RESFlvData();
-        resFlvData.droppable = false;
-        resFlvData.byteBuffer = finalBuff;
-        resFlvData.size = finalBuff.length;
-        resFlvData.dts = (int) tms;
-        resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
-        resFlvData.videoFrameType = RESFlvData.NALU_TYPE_IDR;
-        dataCollecter.collect(resFlvData, RESRtmpPusher.FROM_VIDEO);
+        StreamFlvData streamFlvData = new StreamFlvData();
+        streamFlvData.droppable = false;
+        streamFlvData.byteBuffer = finalBuff;
+        streamFlvData.size = finalBuff.length;
+        streamFlvData.dts = (int) tms;
+        streamFlvData.flvTagType = StreamFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
+        streamFlvData.videoFrameType = StreamFlvData.NALU_TYPE_IDR;
+        dataCollecter.collect(streamFlvData, RtmpPusher.FROM_VIDEO);
     }
 
     private void sendRealData(long tms, ByteBuffer realData) {
@@ -121,13 +122,13 @@ public class VideoSenderThread extends Thread {
         realData.get(finalBuff, PackagerCodec.FlvPackager.FLV_VIDEO_TAG_LENGTH + PackagerCodec.FlvPackager.NALU_HEADER_LENGTH, realDataLength);
         int frameType = finalBuff[PackagerCodec.FlvPackager.FLV_VIDEO_TAG_LENGTH + PackagerCodec.FlvPackager.NALU_HEADER_LENGTH] & 0x1F;
         PackagerCodec.FlvPackager.fillFlvVideoTag(finalBuff, 0, false, frameType == 5, realDataLength);
-        RESFlvData resFlvData = new RESFlvData();
-        resFlvData.droppable = true;
-        resFlvData.byteBuffer = finalBuff;
-        resFlvData.size = finalBuff.length;
-        resFlvData.dts = (int) tms;
-        resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
-        resFlvData.videoFrameType = frameType;
-        dataCollecter.collect(resFlvData, RESRtmpPusher.FROM_VIDEO);
+        StreamFlvData streamFlvData = new StreamFlvData();
+        streamFlvData.droppable = true;
+        streamFlvData.byteBuffer = finalBuff;
+        streamFlvData.size = finalBuff.length;
+        streamFlvData.dts = (int) tms;
+        streamFlvData.flvTagType = StreamFlvData.FLV_RTMP_PACKET_TYPE_VIDEO;
+        streamFlvData.videoFrameType = frameType;
+        dataCollecter.collect(streamFlvData, RtmpPusher.FROM_VIDEO);
     }
 }

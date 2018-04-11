@@ -3,8 +3,8 @@ package com.blink.live.blinkstreamlib.tools;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
-import com.blink.live.blinkstreamlib.model.RESize;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
+import com.blink.live.blinkstreamlib.model.Size;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.util.Collections;
@@ -23,7 +23,7 @@ public class CameraTools {
     public static int targetFps = 30000;
     private static int[] supportedSrcVideoFrameColorType = new int[]{ImageFormat.NV21, ImageFormat.YV12};
 
-    public static boolean configCamera(Camera camera, RESCoreParameters coreParameters) {
+    public static boolean configCamera(Camera camera, StreamCoreParameters coreParameters) {
         Camera.Parameters parameters = camera.getParameters();
         parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
         List<String> focusModes = parameters.getSupportedFocusModes();
@@ -51,7 +51,7 @@ public class CameraTools {
     }
 
     public static void selectCameraFpsRange(Camera.Parameters parameters,
-            RESCoreParameters coreParameters) {
+            StreamCoreParameters coreParameters) {
         List<int[]> fpsRanges = parameters.getSupportedPreviewFpsRange();
         Collections.sort(fpsRanges, new Comparator<int[]>() {
             @Override
@@ -74,7 +74,7 @@ public class CameraTools {
     }
 
     public static void selectCameraPreviewWH(Camera.Parameters parameters,
-            RESCoreParameters coreParameters, RESize targetSize) {
+            StreamCoreParameters coreParameters, Size targetSize) {
         List<Camera.Size> previewsSizes = parameters.getSupportedPreviewSizes();
         Collections.sort(previewsSizes, new Comparator<Camera.Size>() {
             @Override
@@ -97,7 +97,7 @@ public class CameraTools {
     }
 
     public static boolean selectCameraColorFormat(Camera.Parameters parameters,
-            RESCoreParameters coreParameters) {
+            StreamCoreParameters coreParameters) {
         List<Integer> srcColorTypes = new LinkedList<>();
         List<Integer> supportedPreviewFormates = parameters.getSupportedPreviewFormats();
         for (int colortype : supportedSrcVideoFrameColorType) {

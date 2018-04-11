@@ -7,14 +7,14 @@ package com.blink.live.blinkstreamlib.model;
  *     desc   : 视频尺寸配置类
  * </pre>
  */
-public class RESize {
+public class Size {
     /**
      * Create a new immutable Size instance.
      *
      * @param width  The width of the size, in pixels
      * @param height The height of the size, in pixels
      */
-    public RESize(int width, int height) {
+    public Size(int width, int height) {
         mWidth = width;
         mHeight = height;
     }
@@ -57,8 +57,8 @@ public class RESize {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof RESize) {
-            RESize other = (RESize) obj;
+        if (obj instanceof Size) {
+            Size other = (Size) obj;
             return mWidth == other.mWidth && mHeight == other.mHeight;
         }
         return false;

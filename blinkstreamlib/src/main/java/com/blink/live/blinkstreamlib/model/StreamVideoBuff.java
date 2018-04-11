@@ -9,13 +9,13 @@ import java.util.Arrays;
  *     desc   : VideoBuff 类
  * </pre>
  */
-public class RESVideoBuff {
+public class StreamVideoBuff {
     public boolean isReadyToFill;
     public int colorFormat = -1;
     public byte[] buff;
 
 
-    public RESVideoBuff(int colorFormat, int size) {
+    public StreamVideoBuff(int colorFormat, int size) {
         isReadyToFill = true;
         this.colorFormat = colorFormat;
         buff = new byte[size];

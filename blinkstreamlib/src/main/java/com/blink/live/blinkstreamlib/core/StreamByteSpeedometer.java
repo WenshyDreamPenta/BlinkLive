@@ -9,12 +9,12 @@ import java.util.LinkedList;
  *     desc   : audio byte数据
  * </pre>
  */
-public class RESByteSpeedometer {
+public class StreamByteSpeedometer {
     private int timeGranularity;
     private LinkedList<ByteFrame> byteList;
     private final Object syncByteList = new Object();
 
-    public RESByteSpeedometer(int timeGranularity) {
+    public StreamByteSpeedometer(int timeGranularity) {
         this.timeGranularity = timeGranularity;
         byteList = new LinkedList<>();
     }

@@ -7,7 +7,7 @@ package com.blink.live.blinkstreamlib.core.listeners;
  *     desc   : RESConnection 监听接口
  * </pre>
  */
-public interface RESConnectionListener {
+public interface StreamConnectionListener {
     void onOpenConnectionResult(int result);
 
     void onWriteError(int errno);
@@ -15,10 +15,10 @@ public interface RESConnectionListener {
     void onCloseConnectionResult(int result);
 
     class RESWriteErrorRunable implements Runnable {
-        RESConnectionListener connectionListener;
+        StreamConnectionListener connectionListener;
         int errno;
 
-        public RESWriteErrorRunable(RESConnectionListener connectionListener, int errno) {
+        public RESWriteErrorRunable(StreamConnectionListener connectionListener, int errno) {
             this.connectionListener = connectionListener;
             this.errno = errno;
         }

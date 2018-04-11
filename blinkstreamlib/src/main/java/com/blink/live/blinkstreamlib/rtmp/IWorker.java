@@ -13,7 +13,7 @@ public interface IWorker {
     float getSendBufferFreePercent();
     void start(String rtmpAddr);
     void stop();
-    void feed(RESFlvData flvData, int type);
+    void feed(StreamFlvData flvData, int type);
     int getTotalSpeed();
 
 }

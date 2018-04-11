@@ -7,5 +7,5 @@ package com.blink.live.blinkstreamlib.core.listeners;
  *     desc   :
  * </pre>
  */
-public interface RESVideoChangeListener {
+public interface StreamVideoChangeListener {
 }

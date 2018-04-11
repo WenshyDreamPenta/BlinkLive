@@ -7,7 +7,7 @@ package com.blink.live.blinkstreamlib.core;
  *     desc   : video frame 数据
  * </pre>
  */
-public class RESFrameRateMeter {
+public class StreamFrameRateMeter {
     private static final long TIMETRAVEL = 1;
     private static final long TIMETRAVEL_MS = TIMETRAVEL * 1000;
     private static final long GET_TIMETRAVEL_MS = 2 * TIMETRAVEL_MS;
@@ -15,7 +15,7 @@ public class RESFrameRateMeter {
     private float lastFps;
     private long lastUpdateTime;
 
-    public RESFrameRateMeter() {
+    public StreamFrameRateMeter() {
         times = 0;
         lastFps = 0;
         lastUpdateTime = 0;

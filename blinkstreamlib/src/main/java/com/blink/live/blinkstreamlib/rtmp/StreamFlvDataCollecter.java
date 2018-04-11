@@ -7,6 +7,6 @@ package com.blink.live.blinkstreamlib.rtmp;
  *     desc   : RESFlv数据 收集接口
  * </pre>
  */
-public interface RESFlvDataCollecter {
-    void collect(RESFlvData flvData, int type);
+public interface StreamFlvDataCollecter {
+    void collect(StreamFlvData flvData, int type);
 }

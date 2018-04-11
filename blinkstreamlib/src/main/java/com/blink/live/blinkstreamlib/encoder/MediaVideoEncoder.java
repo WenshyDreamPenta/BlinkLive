@@ -9,7 +9,6 @@ import android.opengl.Matrix;
 import android.util.Log;
 import android.view.Surface;
 
-import com.blink.live.blinkstreamlib.encoder.utils.RenderHandler;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.io.IOException;

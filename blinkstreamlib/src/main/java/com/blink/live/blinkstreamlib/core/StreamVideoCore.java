@@ -2,12 +2,12 @@ package com.blink.live.blinkstreamlib.core;
 
 import android.graphics.SurfaceTexture;
 
-import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
-import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
+import com.blink.live.blinkstreamlib.core.listeners.StreamScreenShotListener;
+import com.blink.live.blinkstreamlib.core.listeners.StreamVideoChangeListener;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
-import com.blink.live.blinkstreamlib.model.RESConfig;
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
-import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
+import com.blink.live.blinkstreamlib.model.StreamConfig;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
 
 /**
  * <pre>
@@ -16,9 +16,9 @@ import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
  *     desc   : Video编码工具类接口
  * </pre>
  */
-public interface RESVideoCore {
+public interface StreamVideoCore {
     int OVERWATCH_TEXTURE_ID = 10;
-    boolean prepare(RESConfig resConfig);
+    boolean prepare(StreamConfig streamConfig);
 
     void updateCamTexture(SurfaceTexture camTex);
 
@@ -28,7 +28,7 @@ public interface RESVideoCore {
 
     void stopPreview(boolean releaseTexture);
 
-    boolean startStreaming(RESFlvDataCollecter flvDataCollecter);
+    boolean startStreaming(StreamFlvDataCollecter flvDataCollecter);
 
     boolean stopStreaming();
 
@@ -40,13 +40,13 @@ public interface RESVideoCore {
 
     void reSetVideoFPS(int fps);
 
-    void reSetVideoSize(RESCoreParameters newParameters);
+    void reSetVideoSize(StreamCoreParameters newParameters);
 
     void setCurrentCamera(int cameraIndex);
 
-    void takeScreenShot(RESScreenShotListener listener);
+    void takeScreenShot(StreamScreenShotListener listener);
 
-    void setVideoChangeListener(RESVideoChangeListener listener);
+    void setVideoChangeListener(StreamVideoChangeListener listener);
 
     float getDrawFrameRate();
 

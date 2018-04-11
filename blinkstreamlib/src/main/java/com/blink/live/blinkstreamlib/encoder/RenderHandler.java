@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.encoder.utils;
+package com.blink.live.blinkstreamlib.encoder;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.EGLContext;
@@ -8,6 +8,8 @@ import android.text.TextUtils;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import com.blink.live.blinkstreamlib.encoder.utils.EGLBase;
+import com.blink.live.blinkstreamlib.encoder.utils.GLDrawer2D;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 /**

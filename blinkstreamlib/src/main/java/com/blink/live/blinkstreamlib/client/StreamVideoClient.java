@@ -2,17 +2,17 @@ package com.blink.live.blinkstreamlib.client;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import com.blink.live.blinkstreamlib.core.RESHardVideoCore;
-import com.blink.live.blinkstreamlib.core.RESSoftVideoCore;
-import com.blink.live.blinkstreamlib.core.RESVideoCore;
-import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
-import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
+import com.blink.live.blinkstreamlib.core.StreamHardVideoCore;
+import com.blink.live.blinkstreamlib.core.StreamSoftVideoCore;
+import com.blink.live.blinkstreamlib.core.StreamVideoCore;
+import com.blink.live.blinkstreamlib.core.listeners.StreamScreenShotListener;
+import com.blink.live.blinkstreamlib.core.listeners.StreamVideoChangeListener;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
 import com.blink.live.blinkstreamlib.filter.BaseSoftVideoFilter;
-import com.blink.live.blinkstreamlib.model.RESConfig;
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
-import com.blink.live.blinkstreamlib.model.RESize;
-import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
+import com.blink.live.blinkstreamlib.model.StreamConfig;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
+import com.blink.live.blinkstreamlib.model.Size;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
 import com.blink.live.blinkstreamlib.tools.BuffSizeCalculator;
 import com.blink.live.blinkstreamlib.tools.CameraTools;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
@@ -25,20 +25,20 @@ import java.util.List;
  *     desc   : Video 编码推流工具类
  * </pre>
  */
-public class RESVideoClient {
-    public RESVideoClient videoClient;
-    private RESCoreParameters mRESCoreParameters;
+public class StreamVideoClient {
+    public StreamVideoClient videoClient;
+    private StreamCoreParameters mStreamCoreParameters;
     private final Object syncOp = new Object();
     private Camera mCamera;
     private SurfaceTexture camTexture;
     private int cameraNum;
     private int curentCameraIndex;
-    private RESVideoCore resVideoCore;
+    private StreamVideoCore streamVideoCore;
     private boolean isStreaming;
     private boolean isPreviewing;
 
-    public RESVideoClient(RESCoreParameters mRESCoreParameters) {
-        this.mRESCoreParameters = mRESCoreParameters;
+    public StreamVideoClient(StreamCoreParameters mStreamCoreParameters) {
+        this.mStreamCoreParameters = mStreamCoreParameters;
         this.cameraNum = Camera.getNumberOfCameras();
         this.curentCameraIndex = Camera.CameraInfo.CAMERA_FACING_BACK;
         this.isStreaming = false;
@@ -47,50 +47,50 @@ public class RESVideoClient {
 
     /**
      * 参数设置
-     * @param resConfig 配置
+     * @param streamConfig 配置
      * @return boolean
      */
-    public boolean prepare(RESConfig resConfig) {
+    public boolean prepare(StreamConfig streamConfig) {
         synchronized (syncOp) {
-            if ((cameraNum - 1) >= resConfig.getDefaultCamera()) {
-                curentCameraIndex = resConfig.getDefaultCamera();
+            if ((cameraNum - 1) >= streamConfig.getDefaultCamera()) {
+                curentCameraIndex = streamConfig.getDefaultCamera();
             }
             if (null == (mCamera = createCamera(curentCameraIndex))) {
                 LogUtil.e("can not open camera");
                 return false;
             }
             Camera.Parameters parameters = mCamera.getParameters();
-            CameraTools.selectCameraPreviewWH(parameters, mRESCoreParameters, resConfig.getTargetPreviewSize());
-            CameraTools.selectCameraFpsRange(parameters, mRESCoreParameters);
-            if (resConfig.getVideoFPS() > mRESCoreParameters.previewMaxFps / 1000) {
-                mRESCoreParameters.videoFPS = mRESCoreParameters.previewMaxFps / 1000;
+            CameraTools.selectCameraPreviewWH(parameters, mStreamCoreParameters, streamConfig.getTargetPreviewSize());
+            CameraTools.selectCameraFpsRange(parameters, mStreamCoreParameters);
+            if (streamConfig.getVideoFPS() > mStreamCoreParameters.previewMaxFps / 1000) {
+                mStreamCoreParameters.videoFPS = mStreamCoreParameters.previewMaxFps / 1000;
             }
             else {
-                mRESCoreParameters.videoFPS = resConfig.getVideoFPS();
+                mStreamCoreParameters.videoFPS = streamConfig.getVideoFPS();
             }
-            resolveResolution(mRESCoreParameters, resConfig.getTargetVideoSize());
-            if (!CameraTools.selectCameraColorFormat(parameters, mRESCoreParameters)) {
+            resolveResolution(mStreamCoreParameters, streamConfig.getTargetVideoSize());
+            if (!CameraTools.selectCameraColorFormat(parameters, mStreamCoreParameters)) {
                 LogUtil.e("CameraTools.selectCameraColorFormat,Failed");
-                mRESCoreParameters.dump();
+                mStreamCoreParameters.dump();
                 return false;
             }
-            if (!CameraTools.configCamera(mCamera, mRESCoreParameters)) {
+            if (!CameraTools.configCamera(mCamera, mStreamCoreParameters)) {
                 LogUtil.e("CameraTools.configCamera,Failed");
-                mRESCoreParameters.dump();
+                mStreamCoreParameters.dump();
                 return false;
             }
-            switch (mRESCoreParameters.filterMode) {
-                case RESCoreParameters.FILTER_MODE_SOFT:
-                    resVideoCore = new RESSoftVideoCore(mRESCoreParameters);
+            switch (mStreamCoreParameters.filterMode) {
+                case StreamCoreParameters.FILTER_MODE_SOFT:
+                    streamVideoCore = new StreamSoftVideoCore(mStreamCoreParameters);
                     break;
-                case RESCoreParameters.FILTER_MODE_HARD:
-                    resVideoCore = new RESHardVideoCore(mRESCoreParameters);
+                case StreamCoreParameters.FILTER_MODE_HARD:
+                    streamVideoCore = new StreamHardVideoCore(mStreamCoreParameters);
                     break;
             }
-            if (!resVideoCore.prepare(resConfig)) {
+            if (!streamVideoCore.prepare(streamConfig)) {
                 return false;
             }
-            resVideoCore.setCurrentCamera(curentCameraIndex);
+            streamVideoCore.setCurrentCamera(curentCameraIndex);
             prepareVideo();
         }
         return true;
@@ -101,9 +101,9 @@ public class RESVideoClient {
      * @return boolean
      */
     private boolean prepareVideo(){
-        if (mRESCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
-            mCamera.addCallbackBuffer(new byte[mRESCoreParameters.previewBufferSize]);
-            mCamera.addCallbackBuffer(new byte[mRESCoreParameters.previewBufferSize]);
+        if (mStreamCoreParameters.filterMode == StreamCoreParameters.FILTER_MODE_SOFT) {
+            mCamera.addCallbackBuffer(new byte[mStreamCoreParameters.previewBufferSize]);
+            mCamera.addCallbackBuffer(new byte[mStreamCoreParameters.previewBufferSize]);
         }
         return true;
     }
@@ -113,15 +113,15 @@ public class RESVideoClient {
      * @return boolean
      */
     private boolean startVideo(){
-        camTexture = new SurfaceTexture(RESVideoCore.OVERWATCH_TEXTURE_ID);
-        if(mRESCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT){
+        camTexture = new SurfaceTexture(StreamVideoCore.OVERWATCH_TEXTURE_ID);
+        if(mStreamCoreParameters.filterMode == StreamCoreParameters.FILTER_MODE_SOFT){
             //soft codec
             mCamera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] data, Camera camera) {
                     synchronized (syncOp){
-                        if(resVideoCore != null && data != null){
-                            ((RESSoftVideoCore) resVideoCore).queueVideo(data);
+                        if(streamVideoCore != null && data != null){
+                            ((StreamSoftVideoCore) streamVideoCore).queueVideo(data);
                         }
                     }
                 }
@@ -159,13 +159,13 @@ public class RESVideoClient {
         synchronized (syncOp){
             if(!isStreaming && !isPreviewing){
                 if(!startVideo()){
-                    mRESCoreParameters.dump();
-                    LogUtil.e("RESVideoClient,start(),failed");
+                    mStreamCoreParameters.dump();
+                    LogUtil.e("StreamVideoClient,start(),failed");
                     return false;
                 }
-                resVideoCore.updateCamTexture(camTexture);
+                streamVideoCore.updateCamTexture(camTexture);
             }
-            resVideoCore.startPreview(surfaceTexture, visualWidth, visualHeight);
+            streamVideoCore.startPreview(surfaceTexture, visualWidth, visualHeight);
             isPreviewing = true;
 
             return true;
@@ -178,7 +178,7 @@ public class RESVideoClient {
      * @param visualHeight 高度
      */
     public void updatePreview(int visualWidth, int visualHeight){
-        resVideoCore.updatePreview(visualWidth, visualHeight);
+        streamVideoCore.updatePreview(visualWidth, visualHeight);
     }
 
     /**
@@ -189,10 +189,10 @@ public class RESVideoClient {
     public boolean stopPreview(boolean releaseTexture){
         synchronized (syncOp){
             if(isPreviewing){
-                resVideoCore.stopPreview(releaseTexture);
+                streamVideoCore.stopPreview(releaseTexture);
                 if(!isStreaming){
                     mCamera.stopPreview();
-                    resVideoCore.updateCamTexture(null);
+                    streamVideoCore.updateCamTexture(null);
                     camTexture.release();
                 }
             }
@@ -206,17 +206,17 @@ public class RESVideoClient {
      * @param flvDataCollecter flv数据回调接口
      * @return boolean
      */
-    public boolean startStreaming(RESFlvDataCollecter flvDataCollecter){
+    public boolean startStreaming(StreamFlvDataCollecter flvDataCollecter){
         synchronized (syncOp){
             if (!isStreaming && !isPreviewing) {
                 if (!startVideo()) {
-                    mRESCoreParameters.dump();
-                    LogUtil.e("RESVideoClient,start(),failed");
+                    mStreamCoreParameters.dump();
+                    LogUtil.e("StreamVideoClient,start(),failed");
                     return false;
                 }
-                resVideoCore.updateCamTexture(camTexture);
+                streamVideoCore.updateCamTexture(camTexture);
             }
-            resVideoCore.startStreaming(flvDataCollecter);
+            streamVideoCore.startStreaming(flvDataCollecter);
             isStreaming = true;
             return true;
         }
@@ -228,10 +228,10 @@ public class RESVideoClient {
      */
     public boolean stopStreaming(){
         if (isStreaming) {
-            resVideoCore.stopStreaming();
+            streamVideoCore.stopStreaming();
             if (!isPreviewing) {
                 mCamera.stopPreview();
-                resVideoCore.updateCamTexture(null);
+                streamVideoCore.updateCamTexture(null);
                 camTexture.release();
             }
         }
@@ -246,8 +246,8 @@ public class RESVideoClient {
     public boolean destroy(){
         synchronized (syncOp){
             mCamera.release();
-            resVideoCore.destroy();
-            resVideoCore = null;
+            streamVideoCore.destroy();
+            streamVideoCore = null;
             mCamera = null;
             return true;
         }
@@ -266,17 +266,17 @@ public class RESVideoClient {
                     cameraNum))){
                 return false;
             }
-            resVideoCore.setCurrentCamera(curentCameraIndex);
-            CameraTools.selectCameraFpsRange(mCamera.getParameters(), mRESCoreParameters);
-            if(!CameraTools.configCamera(mCamera, mRESCoreParameters)){
+            streamVideoCore.setCurrentCamera(curentCameraIndex);
+            CameraTools.selectCameraFpsRange(mCamera.getParameters(), mStreamCoreParameters);
+            if(!CameraTools.configCamera(mCamera, mStreamCoreParameters)){
                 mCamera.release();
                 return false;
             }
             prepareVideo();
             camTexture.release();
-            resVideoCore.updateCamTexture(null);
+            streamVideoCore.updateCamTexture(null);
             startVideo();
-            resVideoCore.updateCamTexture(camTexture);
+            streamVideoCore.updateCamTexture(camTexture);
             return true;
         }
     }
@@ -334,8 +334,8 @@ public class RESVideoClient {
      */
     public void reSetVideoBitrate(int bitrate){
         synchronized (syncOp){
-            if(resVideoCore != null){
-                resVideoCore.reSetVideoBitrate(bitrate);
+            if(streamVideoCore != null){
+                streamVideoCore.reSetVideoBitrate(bitrate);
             }
         }
     }
@@ -347,14 +347,14 @@ public class RESVideoClient {
     public void reSetVideoFPS(int fps){
         synchronized (syncOp){
             int targetFps;
-            if(fps > mRESCoreParameters.previewMaxFps / 1000){
-                targetFps = mRESCoreParameters.previewMaxFps / 1000;
+            if(fps > mStreamCoreParameters.previewMaxFps / 1000){
+                targetFps = mStreamCoreParameters.previewMaxFps / 1000;
             }
             else {
                 targetFps = fps;
             }
-            if(resVideoCore != null){
-                resVideoCore.reSetVideoFPS(targetFps);
+            if(streamVideoCore != null){
+                streamVideoCore.reSetVideoFPS(targetFps);
             }
         }
     }
@@ -364,24 +364,24 @@ public class RESVideoClient {
      * @param targetSize 目标尺寸
      * @return boolean
      */
-    public boolean reSetVideoSize(RESize targetSize) {
+    public boolean reSetVideoSize(Size targetSize) {
         synchronized (syncOp) {
-            RESCoreParameters newParameters = new RESCoreParameters();
-            newParameters.isPortrait = mRESCoreParameters.isPortrait;
-            newParameters.filterMode = mRESCoreParameters.filterMode;
+            StreamCoreParameters newParameters = new StreamCoreParameters();
+            newParameters.isPortrait = mStreamCoreParameters.isPortrait;
+            newParameters.filterMode = mStreamCoreParameters.filterMode;
             Camera.Parameters parameters = mCamera.getParameters();
             CameraTools.selectCameraPreviewWH(parameters, newParameters, targetSize);
             resolveResolution(newParameters, targetSize);
             boolean needRestartCamera = (
-                    newParameters.previewVideoHeight != mRESCoreParameters.previewVideoHeight ||
+                    newParameters.previewVideoHeight != mStreamCoreParameters.previewVideoHeight ||
                             newParameters.previewVideoWidth !=
-                                    mRESCoreParameters.previewVideoWidth);
+                                    mStreamCoreParameters.previewVideoWidth);
             if (needRestartCamera) {
-                newParameters.previewBufferSize = BuffSizeCalculator.calculator(mRESCoreParameters.previewVideoWidth,
-                        mRESCoreParameters.previewVideoHeight, mRESCoreParameters.previewColorFormat);
-                mRESCoreParameters.previewVideoWidth = newParameters.previewVideoWidth;
-                mRESCoreParameters.previewVideoHeight = newParameters.previewVideoHeight;
-                mRESCoreParameters.previewBufferSize  = newParameters.previewBufferSize;
+                newParameters.previewBufferSize = BuffSizeCalculator.calculator(mStreamCoreParameters.previewVideoWidth,
+                        mStreamCoreParameters.previewVideoHeight, mStreamCoreParameters.previewColorFormat);
+                mStreamCoreParameters.previewVideoWidth = newParameters.previewVideoWidth;
+                mStreamCoreParameters.previewVideoHeight = newParameters.previewVideoHeight;
+                mStreamCoreParameters.previewBufferSize  = newParameters.previewBufferSize;
                 if((isStreaming || isPreviewing)){
                     mCamera.stopPreview();
                     mCamera.release();
@@ -389,18 +389,18 @@ public class RESVideoClient {
                     if(null == (createCamera(curentCameraIndex))){
                         return false;
                     }
-                    if(!CameraTools.configCamera(mCamera, mRESCoreParameters)){
+                    if(!CameraTools.configCamera(mCamera, mStreamCoreParameters)){
                         mCamera.release();
                         return false;
                     }
                     prepareVideo();
-                    resVideoCore.updateCamTexture(null);
+                    streamVideoCore.updateCamTexture(null);
                     camTexture.release();
                     startVideo();
-                    resVideoCore.updateCamTexture(camTexture);
+                    streamVideoCore.updateCamTexture(camTexture);
                 }
             }
-            resVideoCore.reSetVideoSize(newParameters);
+            streamVideoCore.reSetVideoSize(newParameters);
             return true;
         }
     }
@@ -410,8 +410,8 @@ public class RESVideoClient {
      * @return 滤镜
      */
     public BaseSoftVideoFilter acquireSoftVideoFilter(){
-        if(mRESCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT){
-            return ((RESSoftVideoCore) resVideoCore).acquireVideoFilter();
+        if(mStreamCoreParameters.filterMode == StreamCoreParameters.FILTER_MODE_SOFT){
+            return ((StreamSoftVideoCore) streamVideoCore).acquireVideoFilter();
         }
         return null;
     }
@@ -420,8 +420,8 @@ public class RESVideoClient {
      * 释放滤镜
      */
     public void releaseSoftVideoFilter(){
-        if(mRESCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT){
-            ((RESSoftVideoCore) resVideoCore).releaseVideoFilter();
+        if(mStreamCoreParameters.filterMode == StreamCoreParameters.FILTER_MODE_SOFT){
+            ((StreamSoftVideoCore) streamVideoCore).releaseVideoFilter();
         }
     }
 
@@ -429,26 +429,26 @@ public class RESVideoClient {
      * 设置滤镜
      */
     public void setSoftVideoFilter(BaseSoftVideoFilter baseSoftVideoFilter) {
-        if (mRESCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
-            ((RESSoftVideoCore) resVideoCore).setVideoFilter(baseSoftVideoFilter);
+        if (mStreamCoreParameters.filterMode == StreamCoreParameters.FILTER_MODE_SOFT) {
+            ((StreamSoftVideoCore) streamVideoCore).setVideoFilter(baseSoftVideoFilter);
         }
     }
 
     /**
      *截屏
      */
-    public void takeScreenShot(RESScreenShotListener listener){
+    public void takeScreenShot(StreamScreenShotListener listener){
         synchronized (syncOp){
-            if(resVideoCore != null){
-                resVideoCore.takeScreenShot(listener);
+            if(streamVideoCore != null){
+                streamVideoCore.takeScreenShot(listener);
             }
         }
     }
 
-    public void setVideoChangeListener(RESVideoChangeListener listener) {
+    public void setVideoChangeListener(StreamVideoChangeListener listener) {
         synchronized (syncOp) {
-            if (resVideoCore != null) {
-                resVideoCore.setVideoChangeListener(listener);
+            if (streamVideoCore != null) {
+                streamVideoCore.setVideoChangeListener(listener);
             }
         }
     }
@@ -459,7 +459,7 @@ public class RESVideoClient {
      */
     public float getDrawFrameRate() {
         synchronized (syncOp) {
-            return resVideoCore == null ? 0 : resVideoCore.getDrawFrameRate();
+            return streamVideoCore == null ? 0 : streamVideoCore.getDrawFrameRate();
         }
     }
 
@@ -468,7 +468,7 @@ public class RESVideoClient {
      * @param encoder 编码器
      */
     public void setVideoEncoder(final MediaVideoEncoder encoder) {
-        resVideoCore.setVideoEncoder(encoder);
+        streamVideoCore.setVideoEncoder(encoder);
     }
 
     /**
@@ -478,50 +478,50 @@ public class RESVideoClient {
      * @param isEnableStreamMirror 是否推镜像流
      */
     public void setMirror(boolean isEnableMirror,boolean isEnablePreviewMirror,boolean isEnableStreamMirror) {
-        resVideoCore.setMirror(isEnableMirror,isEnablePreviewMirror,isEnableStreamMirror);
+        streamVideoCore.setMirror(isEnableMirror,isEnablePreviewMirror,isEnableStreamMirror);
     }
 
     /**
      * 尺寸换算
-     * @param resCoreParameters 视频参数对象
+     * @param streamCoreParameters 视频参数对象
      * @param targetVideoSize 目标视频尺寸
      */
-    private void resolveResolution(RESCoreParameters resCoreParameters, RESize targetVideoSize) {
-        if (resCoreParameters.filterMode == RESCoreParameters.FILTER_MODE_SOFT) {
-            if (resCoreParameters.isPortrait) {
-                resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
-                resCoreParameters.videoHeight = resCoreParameters.previewVideoHeight;
+    private void resolveResolution(StreamCoreParameters streamCoreParameters, Size targetVideoSize) {
+        if (streamCoreParameters.filterMode == StreamCoreParameters.FILTER_MODE_SOFT) {
+            if (streamCoreParameters.isPortrait) {
+                streamCoreParameters.videoWidth = streamCoreParameters.previewVideoWidth;
+                streamCoreParameters.videoHeight = streamCoreParameters.previewVideoHeight;
             }
             else {
-                resCoreParameters.videoWidth = resCoreParameters.previewVideoWidth;
-                resCoreParameters.videoHeight = resCoreParameters.previewVideoHeight;
+                streamCoreParameters.videoWidth = streamCoreParameters.previewVideoWidth;
+                streamCoreParameters.videoHeight = streamCoreParameters.previewVideoHeight;
             }
         }
         else {
             float pw, ph, vw, vh;
-            if (resCoreParameters.isPortrait) {
-                resCoreParameters.videoHeight = targetVideoSize.getWidth();
-                resCoreParameters.videoWidth = targetVideoSize.getHeight();
-                pw = resCoreParameters.previewVideoHeight;
-                ph = resCoreParameters.previewVideoWidth;
+            if (streamCoreParameters.isPortrait) {
+                streamCoreParameters.videoHeight = targetVideoSize.getWidth();
+                streamCoreParameters.videoWidth = targetVideoSize.getHeight();
+                pw = streamCoreParameters.previewVideoHeight;
+                ph = streamCoreParameters.previewVideoWidth;
             }
             else {
-                resCoreParameters.videoWidth = targetVideoSize.getWidth();
-                resCoreParameters.videoHeight = targetVideoSize.getHeight();
-                pw = resCoreParameters.previewVideoWidth;
-                ph = resCoreParameters.previewVideoHeight;
+                streamCoreParameters.videoWidth = targetVideoSize.getWidth();
+                streamCoreParameters.videoHeight = targetVideoSize.getHeight();
+                pw = streamCoreParameters.previewVideoWidth;
+                ph = streamCoreParameters.previewVideoHeight;
             }
-            vw = resCoreParameters.videoWidth;
-            vh = resCoreParameters.videoHeight;
+            vw = streamCoreParameters.videoWidth;
+            vh = streamCoreParameters.videoHeight;
             float pr = ph / pw, vr = vh / vw;
             if (pr == vr) {
-                resCoreParameters.cropRatio = 0.0f;
+                streamCoreParameters.cropRatio = 0.0f;
             }
             else if (pr > vr) {
-                resCoreParameters.cropRatio = (1.0f - vr / pr) / 2.0f;
+                streamCoreParameters.cropRatio = (1.0f - vr / pr) / 2.0f;
             }
             else {
-                resCoreParameters.cropRatio = -(1.0f - pr / vr) / 2.0f;
+                streamCoreParameters.cropRatio = -(1.0f - pr / vr) / 2.0f;
             }
         }
     }

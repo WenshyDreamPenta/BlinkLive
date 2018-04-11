@@ -9,39 +9,39 @@ import android.hardware.Camera;
  *     desc   : 参数配置类
  * </pre>
  */
-public class RESConfig {
+public class StreamConfig {
 
-    private RESConfig(){}
+    private StreamConfig(){}
     /**
      * 过滤器类型
      */
     public static class FilterMode {
-        public static final int HARD = RESCoreParameters.FILTER_MODE_HARD;
-        public static final int SOFT = RESCoreParameters.FILTER_MODE_SOFT;
+        public static final int HARD = StreamCoreParameters.FILTER_MODE_HARD;
+        public static final int SOFT = StreamCoreParameters.FILTER_MODE_SOFT;
     }
 
     /**
      * 渲染类型
      */
     public static class RenderingMode {
-        public static final int NativeWindow = RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW;
-        public static final int OpenGLES = RESCoreParameters.RENDERING_MODE_OPENGLES;
+        public static final int NativeWindow = StreamCoreParameters.RENDERING_MODE_NATIVE_WINDOW;
+        public static final int OpenGLES = StreamCoreParameters.RENDERING_MODE_OPENGLES;
     }
 
     /**
      * 方向类型
      */
     public static class DirectionMode {
-        public static final int FLAG_DIRECTION_FLIP_HORIZONTAL = RESCoreParameters.FLAG_DIRECTION_FLIP_HORIZONTAL;
-        public static final int FLAG_DIRECTION_FLIP_VERTICAL = RESCoreParameters.FLAG_DIRECTION_FLIP_VERTICAL;
-        public static final int FLAG_DIRECTION_ROATATION_0 = RESCoreParameters.FLAG_DIRECTION_ROATATION_0;
-        public static final int FLAG_DIRECTION_ROATATION_90 = RESCoreParameters.FLAG_DIRECTION_ROATATION_90;
-        public static final int FLAG_DIRECTION_ROATATION_180 = RESCoreParameters.FLAG_DIRECTION_ROATATION_180;
-        public static final int FLAG_DIRECTION_ROATATION_270 = RESCoreParameters.FLAG_DIRECTION_ROATATION_270;
+        public static final int FLAG_DIRECTION_FLIP_HORIZONTAL = StreamCoreParameters.FLAG_DIRECTION_FLIP_HORIZONTAL;
+        public static final int FLAG_DIRECTION_FLIP_VERTICAL = StreamCoreParameters.FLAG_DIRECTION_FLIP_VERTICAL;
+        public static final int FLAG_DIRECTION_ROATATION_0 = StreamCoreParameters.FLAG_DIRECTION_ROATATION_0;
+        public static final int FLAG_DIRECTION_ROATATION_90 = StreamCoreParameters.FLAG_DIRECTION_ROATATION_90;
+        public static final int FLAG_DIRECTION_ROATATION_180 = StreamCoreParameters.FLAG_DIRECTION_ROATATION_180;
+        public static final int FLAG_DIRECTION_ROATATION_270 = StreamCoreParameters.FLAG_DIRECTION_ROATATION_270;
     }
 
     private int filterMode;
-    private RESize targetVideoSize;
+    private Size targetVideoSize;
     private int videoBufferQueueNum;
     private int bitRate;
     private String rtmpAddr;
@@ -52,13 +52,13 @@ public class RESConfig {
     private int videoFPS;
     private int videoGOP;
     private boolean printDetailMsg;
-    private RESize targetPreviewSize;
+    private Size targetPreviewSize;
 
-    public static RESConfig obtain() {
-        RESConfig res = new RESConfig();
+    public static StreamConfig obtain() {
+        StreamConfig res = new StreamConfig();
         res.setFilterMode(FilterMode.SOFT);
         res.setRenderingMode(RenderingMode.NativeWindow);
-        res.setTargetVideoSize(new RESize(1280, 720));
+        res.setTargetVideoSize(new Size(1280, 720));
         res.setVideoFPS(15);
         res.setVideoGOP(2);
         res.setVideoBufferQueueNum(5);
@@ -78,11 +78,11 @@ public class RESConfig {
         this.filterMode = filterMode;
     }
 
-    public RESize getTargetVideoSize() {
+    public Size getTargetVideoSize() {
         return targetVideoSize;
     }
 
-    public void setTargetVideoSize(RESize targetVideoSize) {
+    public void setTargetVideoSize(Size targetVideoSize) {
         this.targetVideoSize = targetVideoSize;
     }
 
@@ -166,11 +166,11 @@ public class RESConfig {
         this.printDetailMsg = printDetailMsg;
     }
 
-    public RESize getTargetPreviewSize() {
+    public Size getTargetPreviewSize() {
         return targetPreviewSize;
     }
 
-    public void setTargetPreviewSize(RESize targetPreviewSize) {
+    public void setTargetPreviewSize(Size targetPreviewSize) {
         this.targetPreviewSize = targetPreviewSize;
     }
 }

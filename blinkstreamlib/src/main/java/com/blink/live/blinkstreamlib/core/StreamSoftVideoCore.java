@@ -14,17 +14,18 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
-import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
-import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
+import com.blink.live.blinkstreamlib.core.listeners.StreamScreenShotListener;
+import com.blink.live.blinkstreamlib.core.listeners.StreamVideoChangeListener;
+import com.blink.live.blinkstreamlib.core.thread.VideoSenderThread;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
 import com.blink.live.blinkstreamlib.filter.BaseSoftVideoFilter;
-import com.blink.live.blinkstreamlib.model.RESConfig;
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
-import com.blink.live.blinkstreamlib.model.RESVideoBuff;
+import com.blink.live.blinkstreamlib.model.StreamConfig;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
+import com.blink.live.blinkstreamlib.model.StreamVideoBuff;
 import com.blink.live.blinkstreamlib.render.GLESRender;
 import com.blink.live.blinkstreamlib.render.IRender;
 import com.blink.live.blinkstreamlib.render.NativeRender;
-import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
 import com.blink.live.blinkstreamlib.tools.BuffSizeCalculator;
 import com.blink.live.blinkstreamlib.tools.ColorTools;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
@@ -42,8 +43,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *     desc   : 视频软编核心类
  * </pre>
  */
-public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
-    private RESCoreParameters resCoreParameters;
+public class StreamSoftVideoCore implements StreamVideoCore, ISoftVideoCore {
+    private StreamCoreParameters streamCoreParameters;
     private final Object syncOp = new Object();
     private SurfaceTexture cameraTexture;
 
@@ -64,14 +65,14 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     private VideoSenderThread videoSenderThread;
     //VideoBuffs
     //buffers to handle buff from queueVideo
-    private RESVideoBuff[] orignVideoBuffs;
+    private StreamVideoBuff[] orignVideoBuffs;
     private int lastVideoQueueBuffIndex;
     //buffer to convert orignVideoBuff to NV21 if filter are set
-    private RESVideoBuff orignNV21VideoBuff;
+    private StreamVideoBuff orignNV21VideoBuff;
     //buffer to handle filtered color from filter if filter are set
-    private RESVideoBuff filteredNV21VideoBuff;
+    private StreamVideoBuff filteredNV21VideoBuff;
     //buffer to convert other color format to suitable color format for dstVideoEncoder if nessesary
-    private RESVideoBuff suitable4VideoEncoderBuff;
+    private StreamVideoBuff suitable4VideoEncoderBuff;
 
     private final Object syncIsLooping = new Object();
     private boolean isPreviewing = false;
@@ -79,8 +80,8 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     private boolean isEncoderStarted;
     private int loopingInterval;
 
-    public RESSoftVideoCore(RESCoreParameters resCoreParameters) {
-        this.resCoreParameters = resCoreParameters;
+    public StreamSoftVideoCore(StreamCoreParameters streamCoreParameters) {
+        this.streamCoreParameters = streamCoreParameters;
         lockVideoFilter = new ReentrantLock(false);//重入锁
         videoFilter = null;
     }
@@ -93,7 +94,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                     videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_INCOMING_BUFF);
                 }
                 if (orignVideoBuffs != null) {
-                    for (RESVideoBuff buff : orignVideoBuffs) {
+                    for (StreamVideoBuff buff : orignVideoBuffs) {
                         buff.isReadyToFill = true;
                     }
                     lastVideoQueueBuffIndex = 0;
@@ -105,39 +106,39 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     }
 
     @Override
-    public boolean prepare(RESConfig resConfig) {
+    public boolean prepare(StreamConfig streamConfig) {
         synchronized (syncOp) {
-            resCoreParameters.renderingMode = resConfig.getRenderingMode();
-            resCoreParameters.mediacdoecAVCBitRate = resConfig.getBitRate();
-            resCoreParameters.videoBufferQueueNum = resConfig.getVideoBufferQueueNum();
-            resCoreParameters.mediacodecAVCIFrameInterval = resConfig.getVideoGOP();
-            resCoreParameters.mediacodecAVCFrameRate = resCoreParameters.videoFPS;
-            loopingInterval = 1000 / resCoreParameters.videoFPS;
+            streamCoreParameters.renderingMode = streamConfig.getRenderingMode();
+            streamCoreParameters.mediacdoecAVCBitRate = streamConfig.getBitRate();
+            streamCoreParameters.videoBufferQueueNum = streamConfig.getVideoBufferQueueNum();
+            streamCoreParameters.mediacodecAVCIFrameInterval = streamConfig.getVideoGOP();
+            streamCoreParameters.mediacodecAVCFrameRate = streamCoreParameters.videoFPS;
+            loopingInterval = 1000 / streamCoreParameters.videoFPS;
             dstVideoFormat = new MediaFormat();
             synchronized (syncDstVideoEncoder) {
-                videoEncoder = MediaCodecTools.createSoftVideoMediaCodec(resCoreParameters, dstVideoFormat);
+                videoEncoder = MediaCodecTools.createSoftVideoMediaCodec(streamCoreParameters, dstVideoFormat);
                 isEncoderStarted = false;
                 if (videoEncoder == null) {
                     LogUtil.e("create video Mediacodec failed");
                     return false;
                 }
-                resCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(resCoreParameters.videoWidth, resCoreParameters.videoHeight,
-                        resCoreParameters.previewColorFormat);
+                streamCoreParameters.previewBufferSize = BuffSizeCalculator.calculator(streamCoreParameters.videoWidth, streamCoreParameters.videoHeight,
+                        streamCoreParameters.previewColorFormat);
                 //video
-                int videoWidth = resCoreParameters.videoWidth;
-                int videoHeight = resCoreParameters.videoHeight;
-                int videoQueueNum = resCoreParameters.videoBufferQueueNum;
-                orignVideoBuffs = new RESVideoBuff[videoQueueNum];
+                int videoWidth = streamCoreParameters.videoWidth;
+                int videoHeight = streamCoreParameters.videoHeight;
+                int videoQueueNum = streamCoreParameters.videoBufferQueueNum;
+                orignVideoBuffs = new StreamVideoBuff[videoQueueNum];
                 for (int i = 0; i < videoQueueNum; i++) {
-                    orignVideoBuffs[i] = new RESVideoBuff(resCoreParameters.previewColorFormat, resCoreParameters.previewBufferSize);
+                    orignVideoBuffs[i] = new StreamVideoBuff(streamCoreParameters.previewColorFormat, streamCoreParameters.previewBufferSize);
                 }
                 lastVideoQueueBuffIndex = 0;
-                orignNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar, BuffSizeCalculator
+                orignNV21VideoBuff = new StreamVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar, BuffSizeCalculator
                         .calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
-                filteredNV21VideoBuff = new RESVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar, BuffSizeCalculator
+                filteredNV21VideoBuff = new StreamVideoBuff(MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar, BuffSizeCalculator
                         .calculator(videoWidth, videoHeight, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar));
-                suitable4VideoEncoderBuff = new RESVideoBuff(resCoreParameters.mediacodecAVCColorFormat, BuffSizeCalculator
-                        .calculator(videoWidth, videoHeight, resCoreParameters.mediacodecAVCColorFormat));
+                suitable4VideoEncoderBuff = new StreamVideoBuff(streamCoreParameters.mediacodecAVCColorFormat, BuffSizeCalculator
+                        .calculator(videoWidth, videoHeight, streamCoreParameters.mediacodecAVCColorFormat));
                 videoFilterHandlerThread = new HandlerThread("videoFilterHandlerThread");
                 videoFilterHandlerThread.start();
                 videoFilterHandler = new VideoFilterHandler(videoFilterHandlerThread.getLooper());
@@ -159,17 +160,17 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
             if (previewRender != null) {
                 throw new RuntimeException("startPreview without desytroy previous");
             }
-            switch (resCoreParameters.renderingMode) {
-                case RESCoreParameters.RENDERING_MODE_NATIVE_WINDOW:
+            switch (streamCoreParameters.renderingMode) {
+                case StreamCoreParameters.RENDERING_MODE_NATIVE_WINDOW:
                     previewRender = new NativeRender();
                     break;
-                case RESCoreParameters.RENDERING_MODE_OPENGLES:
+                case StreamCoreParameters.RENDERING_MODE_OPENGLES:
                     previewRender = new GLESRender();
                     break;
                 default:
                     throw new RuntimeException("Unknow rendering mode");
             }
-            previewRender.create(surfaceTexture, resCoreParameters.previewColorFormat, resCoreParameters.videoWidth, resCoreParameters.videoHeight, visualWidth, visualHeight);
+            previewRender.create(surfaceTexture, streamCoreParameters.previewColorFormat, streamCoreParameters.videoWidth, streamCoreParameters.videoHeight, visualWidth, visualHeight);
             synchronized (syncIsLooping) {
                 if (!isPreviewing && !isStreaming) {
                     videoFilterHandler.removeMessages(VideoFilterHandler.WHAT_DRAW);
@@ -206,7 +207,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     }
 
     @Override
-    public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
+    public boolean startStreaming(StreamFlvDataCollecter flvDataCollecter) {
         synchronized (syncOp) {
             try {
                 synchronized (syncDstVideoEncoder) {
@@ -230,7 +231,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                 }
             }
             catch (Exception e) {
-                LogUtil.trace("RESVideoClient.start failed", e);
+                LogUtil.trace("StreamVideoClient.start failed", e);
                 return false;
             }
         }
@@ -278,7 +279,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
         synchronized (syncOp) {
             if (videoFilterHandler != null) {
                 videoFilterHandler.sendMessage(videoFilterHandler.obtainMessage(VideoFilterHandler.WHAT_RESET_BITRATE, 0));
-                resCoreParameters.mediacdoecAVCBitRate = bitrate;
+                streamCoreParameters.mediacdoecAVCBitRate = bitrate;
                 dstVideoFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitrate);
             }
         }
@@ -288,33 +289,33 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     @Override
     public int getVideoBitrate() {
         synchronized (syncOp) {
-            return resCoreParameters.mediacdoecAVCBitRate;
+            return streamCoreParameters.mediacdoecAVCBitRate;
         }
     }
 
     @Override
     public void reSetVideoFPS(int fps) {
         synchronized (syncOp) {
-            resCoreParameters.videoFPS = fps;
-            loopingInterval = 1000 / resCoreParameters.videoFPS;
+            streamCoreParameters.videoFPS = fps;
+            loopingInterval = 1000 / streamCoreParameters.videoFPS;
         }
     }
 
     @Override
-    public void reSetVideoSize(RESCoreParameters newParameters) {
+    public void reSetVideoSize(StreamCoreParameters newParameters) {
         synchronized (syncOp) {
-            resCoreParameters.videoHeight = newParameters.videoHeight;
-            resCoreParameters.videoWidth = newParameters.videoWidth;
+            streamCoreParameters.videoHeight = newParameters.videoHeight;
+            streamCoreParameters.videoWidth = newParameters.videoWidth;
         }
     }
 
     @Override
-    public void takeScreenShot(RESScreenShotListener listener) {
+    public void takeScreenShot(StreamScreenShotListener listener) {
         //todo: takeScreen Shot
     }
 
     @Override
-    public void setVideoChangeListener(RESVideoChangeListener listener) {
+    public void setVideoChangeListener(StreamVideoChangeListener listener) {
 
     }
 
@@ -353,8 +354,8 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
     @Override
     public void acceptVideo(byte[] src, byte[] dst) {
         int directionFlag = currentCamera ==
-                Camera.CameraInfo.CAMERA_FACING_BACK ? resCoreParameters.backCameraDirectionMode : resCoreParameters.frontCameraDirectionMode;
-        ColorTools.NV21Transform(src, dst, resCoreParameters.previewVideoWidth, resCoreParameters.previewVideoHeight, directionFlag);
+                Camera.CameraInfo.CAMERA_FACING_BACK ? streamCoreParameters.backCameraDirectionMode : streamCoreParameters.frontCameraDirectionMode;
+        ColorTools.NV21Transform(src, dst, streamCoreParameters.previewVideoWidth, streamCoreParameters.previewVideoHeight, directionFlag);
     }
 
     public BaseSoftVideoFilter acquireVideoFilter() {
@@ -373,7 +374,7 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
         }
         videoFilter = baseSoftVideoFilter;
         if (videoFilter != null) {
-            videoFilter.onInit(resCoreParameters.videoWidth, resCoreParameters.videoHeight);
+            videoFilter.onInit(streamCoreParameters.videoWidth, streamCoreParameters.videoHeight);
         }
         lockVideoFilter.unlock();
     }
@@ -385,12 +386,12 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
         public static final int WHAT_RESET_BITRATE = 3;
 
         private int sequenceNum;
-        private RESFrameRateMeter drawFrameRateMeter;
+        private StreamFrameRateMeter drawFrameRateMeter;
 
         public VideoFilterHandler(Looper looper) {
             super(looper);
             sequenceNum = 0;
-            drawFrameRateMeter = new RESFrameRateMeter();
+            drawFrameRateMeter = new StreamFrameRateMeter();
         }
 
         public float getDrawFrameRate() {
@@ -429,29 +430,29 @@ public class RESSoftVideoCore implements RESVideoCore, IRESSoftVideoCore {
                              * orignNV21VideoBuff is ready
                              * orignNV21VideoBuff->suitable4VideoEncoderBuff
                              */
-                            if (resCoreParameters.mediacodecAVCColorFormat ==
+                            if (streamCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
                                 ColorTools.NV21TOYUV420SP(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
-                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                                        streamCoreParameters.videoWidth * streamCoreParameters.videoHeight);
                             }
-                            else if (resCoreParameters.mediacodecAVCColorFormat ==
+                            else if (streamCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
                                 ColorTools.NV21TOYUV420P(modified ? filteredNV21VideoBuff.buff : orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
-                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                                        streamCoreParameters.videoWidth * streamCoreParameters.videoHeight);
                             }
                         }
                         else {
                             rendering(orignNV21VideoBuff.buff);
                             checkScreenShot(orignNV21VideoBuff.buff);
-                            if (resCoreParameters.mediacodecAVCColorFormat ==
+                            if (streamCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
                                 ColorTools.NV21TOYUV420SP(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
-                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                                        streamCoreParameters.videoWidth * streamCoreParameters.videoHeight);
                             }
-                            else if (resCoreParameters.mediacodecAVCColorFormat ==
+                            else if (streamCoreParameters.mediacodecAVCColorFormat ==
                                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
                                 ColorTools.NV21TOYUV420P(orignNV21VideoBuff.buff, suitable4VideoEncoderBuff.buff,
-                                        resCoreParameters.videoWidth * resCoreParameters.videoHeight);
+                                        streamCoreParameters.videoWidth * streamCoreParameters.videoHeight);
                             }
                             orignNV21VideoBuff.isReadyToFill = true;
                         }

@@ -2,12 +2,12 @@ package com.blink.live.blinkstreamlib.core;
 
 import android.graphics.SurfaceTexture;
 
-import com.blink.live.blinkstreamlib.core.listeners.RESScreenShotListener;
-import com.blink.live.blinkstreamlib.core.listeners.RESVideoChangeListener;
+import com.blink.live.blinkstreamlib.core.listeners.StreamScreenShotListener;
+import com.blink.live.blinkstreamlib.core.listeners.StreamVideoChangeListener;
 import com.blink.live.blinkstreamlib.encoder.MediaVideoEncoder;
-import com.blink.live.blinkstreamlib.model.RESConfig;
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
-import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
+import com.blink.live.blinkstreamlib.model.StreamConfig;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
 
 /**
  * <pre>
@@ -16,15 +16,15 @@ import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
  *     desc   :
  * </pre>
  */
-public class RESHardVideoCore implements RESVideoCore{
-    private RESCoreParameters resCoreParameters;
+public class StreamHardVideoCore implements StreamVideoCore {
+    private StreamCoreParameters streamCoreParameters;
 
-    public RESHardVideoCore(RESCoreParameters resCoreParameters) {
-        this.resCoreParameters = resCoreParameters;
+    public StreamHardVideoCore(StreamCoreParameters streamCoreParameters) {
+        this.streamCoreParameters = streamCoreParameters;
     }
 
     @Override
-    public boolean prepare(RESConfig resConfig) {
+    public boolean prepare(StreamConfig streamConfig) {
         //todo:
         return false;
     }
@@ -50,7 +50,7 @@ public class RESHardVideoCore implements RESVideoCore{
     }
 
     @Override
-    public boolean startStreaming(RESFlvDataCollecter flvDataCollecter) {
+    public boolean startStreaming(StreamFlvDataCollecter flvDataCollecter) {
         return false;
     }
 
@@ -80,7 +80,7 @@ public class RESHardVideoCore implements RESVideoCore{
     }
 
     @Override
-    public void reSetVideoSize(RESCoreParameters newParameters) {
+    public void reSetVideoSize(StreamCoreParameters newParameters) {
 
     }
 
@@ -90,12 +90,12 @@ public class RESHardVideoCore implements RESVideoCore{
     }
 
     @Override
-    public void takeScreenShot(RESScreenShotListener listener) {
+    public void takeScreenShot(StreamScreenShotListener listener) {
 
     }
 
     @Override
-    public void setVideoChangeListener(RESVideoChangeListener listener) {
+    public void setVideoChangeListener(StreamVideoChangeListener listener) {
 
     }
 

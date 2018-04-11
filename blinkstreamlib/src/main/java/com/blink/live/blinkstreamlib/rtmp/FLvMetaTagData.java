@@ -1,6 +1,6 @@
 package com.blink.live.blinkstreamlib.rtmp;
 
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
 
 import java.util.ArrayList;
 
@@ -44,7 +44,7 @@ public class FLvMetaTagData {
     }
 
     //init audio video Parameters
-    public FLvMetaTagData(RESCoreParameters coreParameters) {
+    public FLvMetaTagData(StreamCoreParameters coreParameters) {
         this();
         //Audio code AAC
         setProperty("audiocodecid", 10);

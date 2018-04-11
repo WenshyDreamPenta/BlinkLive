@@ -5,10 +5,10 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import com.blink.live.blinkstreamlib.core.RESByteSpeedometer;
-import com.blink.live.blinkstreamlib.core.RESFrameRateMeter;
-import com.blink.live.blinkstreamlib.core.listeners.RESConnectionListener;
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
+import com.blink.live.blinkstreamlib.core.StreamByteSpeedometer;
+import com.blink.live.blinkstreamlib.core.StreamFrameRateMeter;
+import com.blink.live.blinkstreamlib.core.listeners.StreamConnectionListener;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
 import com.blink.live.blinkstreamlib.tools.CallbackDelivery;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
@@ -19,7 +19,7 @@ import com.blink.live.blinkstreamlib.utils.LogUtil;
  *     desc   : Rtmp 推流
  * </pre>
  */
-public class RESRtmpPusher implements IWorker {
+public class RtmpPusher implements IWorker {
     //时间粒度
     private static final int TIMEGRANULARITY = 3000;
     public static final int FROM_AUDIO = 8;
@@ -31,7 +31,7 @@ public class RESRtmpPusher implements IWorker {
     private final Object syncOp = new Object();
 
     //初始化参数
-    public void preapare(RESCoreParameters coreParameters) {
+    public void preapare(StreamCoreParameters coreParameters) {
         synchronized (syncOp) {
             workHandlerThread = new HandlerThread("RESRtmpSender,workHandlerThread");
             workHandlerThread.start();
@@ -40,7 +40,7 @@ public class RESRtmpPusher implements IWorker {
         }
     }
 
-    public void setConnectionListener(RESConnectionListener connectionListener) {
+    public void setConnectionListener(StreamConnectionListener connectionListener) {
         synchronized (syncOp) {
             workHandler.setConnectionListener(connectionListener);
         }
@@ -82,7 +82,7 @@ public class RESRtmpPusher implements IWorker {
     }
 
     @Override
-    public void feed(RESFlvData flvData, int type) {
+    public void feed(StreamFlvData flvData, int type) {
         synchronized (syncOp) {
             workHandler.feed(flvData, type);
         }
@@ -126,11 +126,11 @@ public class RESRtmpPusher implements IWorker {
         private int writeMsgNum = 0;
         private final Object syncWriteMsgNum = new Object();
 
-        private RESByteSpeedometer videoByteSpeedometer = new RESByteSpeedometer(TIMEGRANULARITY);
-        private RESByteSpeedometer audioByteSpeedometer = new RESByteSpeedometer(TIMEGRANULARITY);
-        private RESFrameRateMeter sendFrameRateMeter = new RESFrameRateMeter();
+        private StreamByteSpeedometer videoByteSpeedometer = new StreamByteSpeedometer(TIMEGRANULARITY);
+        private StreamByteSpeedometer audioByteSpeedometer = new StreamByteSpeedometer(TIMEGRANULARITY);
+        private StreamFrameRateMeter sendFrameRateMeter = new StreamFrameRateMeter();
         private FLvMetaTagData fLvMetaTagData;
-        private RESConnectionListener connectionListener;
+        private StreamConnectionListener connectionListener;
         private final Object syncConnectionListener = new Object();
         private int errorTime = 0;
 
@@ -181,7 +181,7 @@ public class RESRtmpPusher implements IWorker {
                     }
                     else {
                         byte[] metaData = fLvMetaTagData.getMetaData();
-                        RtmpClient.write(jniRtmpPointer, metaData, metaData.length, RESFlvData.FLV_RTMP_PACKET_TYPE_INFO, 0);
+                        RtmpClient.write(jniRtmpPointer, metaData, metaData.length, StreamFlvData.FLV_RTMP_PACKET_TYPE_INFO, 0);
                         state = STATE.RUNNING;
                     }
                     break;
@@ -215,9 +215,9 @@ public class RESRtmpPusher implements IWorker {
                     if (mListener != null) {
                         mListener.getBufferFree(getSendBufferFreePercent());
                     }
-                    RESFlvData flvData = (RESFlvData) msg.obj;
+                    StreamFlvData flvData = (StreamFlvData) msg.obj;
                     if (writeMsgNum >= (maxQueueLength * 3 / 4) &&
-                            flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO &&
+                            flvData.flvTagType == StreamFlvData.FLV_RTMP_PACKET_TYPE_VIDEO &&
                             flvData.droppable) {
                         LogUtil.d("senderQueue is crowded,abandon video");
                         break;
@@ -225,7 +225,7 @@ public class RESRtmpPusher implements IWorker {
                     final int res = RtmpClient.write(jniRtmpPointer, flvData.byteBuffer, flvData.byteBuffer.length, flvData.flvTagType, flvData.dts);
                     if (res == 0) {
                         errorTime = 0;
-                        if (flvData.flvTagType == RESFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
+                        if (flvData.flvTagType == StreamFlvData.FLV_RTMP_PACKET_TYPE_VIDEO) {
                             videoByteSpeedometer.gain(flvData.size);
                             sendFrameRateMeter.count();
                         }
@@ -238,7 +238,7 @@ public class RESRtmpPusher implements IWorker {
                         synchronized (syncConnectionListener) {
                             if (connectionListener != null) {
                                 CallbackDelivery.getInstance()
-                                        .post(new RESConnectionListener.RESWriteErrorRunable(connectionListener, res));
+                                        .post(new StreamConnectionListener.RESWriteErrorRunable(connectionListener, res));
                             }
                         }
                     }
@@ -289,7 +289,7 @@ public class RESRtmpPusher implements IWorker {
         }
 
         @Override
-        public void feed(RESFlvData flvData, int type) {
+        public void feed(StreamFlvData flvData, int type) {
             synchronized (syncWriteMsgNum) {
                 //LAKETODO optimize
                 if (writeMsgNum <= maxQueueLength) {
@@ -315,7 +315,7 @@ public class RESRtmpPusher implements IWorker {
             return audioByteSpeedometer.getSpeed();
         }
 
-        public void setConnectionListener(RESConnectionListener connectionListener) {
+        public void setConnectionListener(StreamConnectionListener connectionListener) {
             synchronized (syncConnectionListener) {
                 this.connectionListener = connectionListener;
             }

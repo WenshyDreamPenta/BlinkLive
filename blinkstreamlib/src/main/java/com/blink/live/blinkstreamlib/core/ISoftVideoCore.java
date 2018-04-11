@@ -7,7 +7,7 @@ package com.blink.live.blinkstreamlib.core;
  *     desc   : 软编码接口
  * </pre>
  */
-public interface IRESSoftVideoCore {
+public interface ISoftVideoCore {
 
     void queueVideo(byte[] rawVideoFrame);
     void acceptVideo(byte[] src, byte[] dst);

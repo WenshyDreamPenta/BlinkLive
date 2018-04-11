@@ -7,7 +7,7 @@ package com.blink.live.blinkstreamlib.rtmp;
  *     desc   : RESFlv数据封装
  * </pre>
  */
-public class RESFlvData {
+public class StreamFlvData {
 
     public final static int FLV_RTMP_PACKET_TYPE_VIDEO = 9;
     public final static int FLV_RTMP_PACKET_TYPE_AUDIO = 8;

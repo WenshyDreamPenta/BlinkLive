@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  *     desc   : RES核心参数
  * </pre>
  */
-public class RESCoreParameters {
+public class StreamCoreParameters {
     public static final int FILTER_MODE_HARD = 1;
     public static final int FILTER_MODE_SOFT = 2;
 
@@ -71,7 +71,7 @@ public class RESCoreParameters {
     //sender
     public int senderQueueLength;
 
-    public RESCoreParameters() {
+    public StreamCoreParameters() {
         done = false;
         printDetailMsg = false;
         filterMode = -1;

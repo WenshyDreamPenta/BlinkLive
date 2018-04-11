@@ -1,10 +1,11 @@
-package com.blink.live.blinkstreamlib.core;
+package com.blink.live.blinkstreamlib.core.thread;
 
 import android.media.MediaCodec;
 
-import com.blink.live.blinkstreamlib.rtmp.RESFlvData;
-import com.blink.live.blinkstreamlib.rtmp.RESFlvDataCollecter;
-import com.blink.live.blinkstreamlib.rtmp.RESRtmpPusher;
+import com.blink.live.blinkstreamlib.core.PackagerCodec;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvData;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
+import com.blink.live.blinkstreamlib.rtmp.RtmpPusher;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.nio.ByteBuffer;
@@ -22,11 +23,11 @@ public class AudioSenderThread extends Thread {
     private MediaCodec.BufferInfo mBufferInfo;
     private long startTime = 0;
     private MediaCodec audioEncoder;
-    private RESFlvDataCollecter dataCollecter;
+    private StreamFlvDataCollecter dataCollecter;
 
     private boolean shouldQuit = false;
 
-    AudioSenderThread(String name, MediaCodec encoder, RESFlvDataCollecter flvDataCollecter) {
+    AudioSenderThread(String name, MediaCodec encoder, StreamFlvDataCollecter flvDataCollecter) {
         super(name);
         mBufferInfo = new MediaCodec.BufferInfo();
         startTime = 0;
@@ -86,13 +87,13 @@ public class AudioSenderThread extends Thread {
         byte[] finalBuff = new byte[packetLen];
         realData.get(finalBuff, PackagerCodec.FlvPackager.FLV_AUDIO_TAG_LENGTH, realData.remaining());
         PackagerCodec.FlvPackager.fillFlvAudioTag(finalBuff, 0, true);
-        RESFlvData resFlvData = new RESFlvData();
-        resFlvData.droppable = false;
-        resFlvData.byteBuffer = finalBuff;
-        resFlvData.size = finalBuff.length;
-        resFlvData.dts = (int) tms;
-        resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_AUDIO;
-        dataCollecter.collect(resFlvData, RESRtmpPusher.FROM_AUDIO);
+        StreamFlvData streamFlvData = new StreamFlvData();
+        streamFlvData.droppable = false;
+        streamFlvData.byteBuffer = finalBuff;
+        streamFlvData.size = finalBuff.length;
+        streamFlvData.dts = (int) tms;
+        streamFlvData.flvTagType = StreamFlvData.FLV_RTMP_PACKET_TYPE_AUDIO;
+        dataCollecter.collect(streamFlvData, RtmpPusher.FROM_AUDIO);
     }
 
     //发送audio 数据
@@ -101,13 +102,13 @@ public class AudioSenderThread extends Thread {
         byte[] finalBuff = new byte[packetLen];
         realData.get(finalBuff, PackagerCodec.FlvPackager.FLV_AUDIO_TAG_LENGTH, realData.remaining());
         PackagerCodec.FlvPackager.fillFlvAudioTag(finalBuff, 0, false);
-        RESFlvData resFlvData = new RESFlvData();
-        resFlvData.droppable = true;
-        resFlvData.byteBuffer = finalBuff;
-        resFlvData.size = finalBuff.length;
-        resFlvData.dts = (int) tms;
-        resFlvData.flvTagType = RESFlvData.FLV_RTMP_PACKET_TYPE_AUDIO;
-        dataCollecter.collect(resFlvData, RESRtmpPusher.FROM_AUDIO);
+        StreamFlvData streamFlvData = new StreamFlvData();
+        streamFlvData.droppable = true;
+        streamFlvData.byteBuffer = finalBuff;
+        streamFlvData.size = finalBuff.length;
+        streamFlvData.dts = (int) tms;
+        streamFlvData.flvTagType = StreamFlvData.FLV_RTMP_PACKET_TYPE_AUDIO;
+        dataCollecter.collect(streamFlvData, RtmpPusher.FROM_AUDIO);
     }
 
 }

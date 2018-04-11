@@ -5,7 +5,7 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.os.Build;
 
-import com.blink.live.blinkstreamlib.model.RESCoreParameters;
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
 import com.blink.live.blinkstreamlib.utils.LogUtil;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ public class MediaCodecTools {
      * @param videoFormat    视频格式
      * @return MediaCodec对象
      */
-    public static MediaCodec createSoftVideoMediaCodec(RESCoreParameters coreParameters, MediaFormat videoFormat) {
+    public static MediaCodec createSoftVideoMediaCodec(StreamCoreParameters coreParameters, MediaFormat videoFormat) {
         videoFormat.setString(MediaFormat.KEY_MIME, "video/avc");
         videoFormat.setInteger(MediaFormat.KEY_WIDTH, coreParameters.videoWidth);
         videoFormat.setInteger(MediaFormat.KEY_HEIGHT, coreParameters.videoHeight);
@@ -78,7 +78,7 @@ public class MediaCodecTools {
      * @param audioFormat    音频格式
      * @return MediaCodec对象
      */
-    public static MediaCodec createAudioMediaCodec(RESCoreParameters coreParameters, MediaFormat audioFormat) {
+    public static MediaCodec createAudioMediaCodec(StreamCoreParameters coreParameters, MediaFormat audioFormat) {
         //Audio
         MediaCodec result;
         audioFormat.setString(MediaFormat.KEY_MIME, "audio/mp4a-latm");
@@ -105,7 +105,7 @@ public class MediaCodecTools {
      * @param videoFormat    视频格式
      * @return MediaCodec对象
      */
-    public static MediaCodec createHardVideoMediaCodec(RESCoreParameters coreParameters, MediaFormat videoFormat) {
+    public static MediaCodec createHardVideoMediaCodec(StreamCoreParameters coreParameters, MediaFormat videoFormat) {
         videoFormat.setString(MediaFormat.KEY_MIME, "video/avc");
         videoFormat.setInteger(MediaFormat.KEY_WIDTH, coreParameters.videoWidth);
         videoFormat.setInteger(MediaFormat.KEY_HEIGHT, coreParameters.videoHeight);
