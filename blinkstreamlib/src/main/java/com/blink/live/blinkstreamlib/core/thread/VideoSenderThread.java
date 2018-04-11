@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 public class VideoSenderThread extends Thread {
     private static final long WAIT_TIME = 5000;
     private MediaCodec.BufferInfo eInfo;
-    private long startTime = 0;
+    private long startTime;
     private MediaCodec dstVideoEncoder;
     private final Object syncDstVideoEncoder = new Object();
     private StreamFlvDataCollecter dataCollecter;
