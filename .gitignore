@@ -8,3 +8,5 @@
 /captures
 .externalNativeBuild
 .idea
+libs/
+src/main/res/drawable/

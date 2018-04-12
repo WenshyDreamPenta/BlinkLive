@@ -1,4 +1,4 @@
-package com.blink.live.blinkstreamlib.core;
+package com.blink.live.blinkstreamlib.core.video;
 
 import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
@@ -14,6 +14,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
+import com.blink.live.blinkstreamlib.core.StreamFrameRateMeter;
 import com.blink.live.blinkstreamlib.core.listener.StreamScreenShotListener;
 import com.blink.live.blinkstreamlib.core.listener.StreamVideoChangeListener;
 import com.blink.live.blinkstreamlib.core.thread.VideoSenderThread;
