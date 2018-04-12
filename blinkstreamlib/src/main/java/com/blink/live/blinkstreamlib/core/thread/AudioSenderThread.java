@@ -63,9 +63,9 @@ public class AudioSenderThread extends Thread {
                     if (startTime == 0) {
                         startTime = mBufferInfo.presentationTimeUs / 1000;
                     }
-                    /**
-                     * we send audio SpecificConfig already in INFO_OUTPUT_FORMAT_CHANGED
-                     * so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG
+                    /*
+                      we send audio SpecificConfig already in INFO_OUTPUT_FORMAT_CHANGED
+                      so we ignore MediaCodec.BUFFER_FLAG_CODEC_CONFIG
                      */
                     if (mBufferInfo.flags != MediaCodec.BUFFER_FLAG_CODEC_CONFIG &&
                             mBufferInfo.size != 0) {
