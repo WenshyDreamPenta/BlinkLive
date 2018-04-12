@@ -36,7 +36,7 @@ public class AudioSenderThread extends Thread {
     }
 
     //中断线程
-    void quit() {
+    public void quit() {
         shouldQuit = true;
         this.interrupt();
     }

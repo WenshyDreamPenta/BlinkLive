@@ -11,9 +11,32 @@ import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
  * </pre>
  */
 public interface IAudioCore {
+    /**
+     * audio数据入口
+     * @param rawAudioFrame 音频byte数组
+     */
     void queueAudio(byte[] rawAudioFrame);
-    void prepare(StreamConfig streamConfig);
+
+    /**
+     * prepare
+     * @param streamConfig 配置
+     * @return boolean
+     */
+    boolean prepare(StreamConfig streamConfig);
+
+    /**
+     * 开启编码
+     * @param streamFlvDataCollecter 数据收集器
+     */
     void start(StreamFlvDataCollecter streamFlvDataCollecter);
+
+    /**
+     * 停止编码
+     */
     void stop();
+
+    /**
+     * 销毁
+     */
     void destroy();
 }
