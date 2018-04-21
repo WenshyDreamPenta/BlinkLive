@@ -22,6 +22,7 @@ public class PackagerCodec {
             int ppslength = PPSByteBuff.remaining();
             int length = 11 + spslength + ppslength;
             byte[] result = new byte[length];
+            //加入编码数据
             SPSByteBuff.get(result, 8, spslength);
             PPSByteBuff.get(result, 8 + spslength + 3, ppslength);
             /**
