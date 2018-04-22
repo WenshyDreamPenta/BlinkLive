@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * <pre>
  *     author : wangmingxing
  *     time   : 2018/3/14
- *     desc   : H264编码  FLVPackager
+ *     desc   : H264编码  FLVPackager 提供h264编码功能
  * </pre>
  */
 public class PackagerCodec {
