@@ -2,6 +2,7 @@ package com.blink.live.blinkstreamlib.client;
 
 import android.media.AudioRecord;
 
+import com.blink.live.blinkstreamlib.core.audio.StreamAudioCore;
 import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
 
 /**
@@ -16,7 +17,12 @@ public class StreamAudioClient {
     private final Object SynOp = new Object();
     private AudioRecord audioRecord;
     private byte[] audioBuffer;
+    private StreamAudioCore streamAudioCore;
 
+    public StreamAudioClient(StreamCoreParameters streamCoreParameters){
+        this.streamCoreParameters = streamCoreParameters;
+    }
+    
     class AudioRecordThread extends Thread{
         private boolean isRunning = false;
         AudioRecordThread(){
