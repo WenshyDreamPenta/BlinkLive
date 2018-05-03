@@ -96,9 +96,10 @@ public class StreamAudioClient {
     }
 
     private boolean prepareAudio() {
-        int minBufferSize = AudioRecord.getMinBufferSize(streamCoreParameters.audioRecoderSampleRate, streamCoreParameters.audioRecoderChannelConfig, streamCoreParameters.audioRecoderFormat);
-        audioRecord = new AudioRecord(streamCoreParameters.audioRecoderSource, streamCoreParameters.audioRecoderSampleRate, streamCoreParameters.audioRecoderChannelConfig, streamCoreParameters.audioRecoderFormat,
-                minBufferSize * 5);
+        int minBufferSize = AudioRecord.getMinBufferSize(streamCoreParameters.audioRecoderSampleRate,
+                streamCoreParameters.audioRecoderChannelConfig, streamCoreParameters.audioRecoderFormat);
+        audioRecord = new AudioRecord(streamCoreParameters.audioRecoderSource, streamCoreParameters.audioRecoderSampleRate,
+                streamCoreParameters.audioRecoderChannelConfig, streamCoreParameters.audioRecoderFormat, minBufferSize * 5);
         audioBuffer = new byte[streamCoreParameters.audioRecoderBufferSize];
         if (AudioRecord.STATE_INITIALIZED != audioRecord.getState()) {
             return false;
