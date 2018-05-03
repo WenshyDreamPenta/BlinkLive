@@ -17,7 +17,7 @@ public class CallbackDelivery {
     private final Executor mCallbackPoster;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
-    public static CallbackDelivery getInstance() {
+    public static CallbackDelivery initInstance() {
         return instance == null ? instance = new CallbackDelivery() : instance;
     }
 

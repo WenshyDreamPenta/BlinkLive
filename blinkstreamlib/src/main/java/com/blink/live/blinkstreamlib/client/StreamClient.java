@@ -1,5 +1,14 @@
 package com.blink.live.blinkstreamlib.client;
 
+import android.app.Activity;
+
+import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
+import com.blink.live.blinkstreamlib.rtmp.RtmpPusher;
+import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
+import com.blink.live.blinkstreamlib.tools.CallbackDelivery;
+
+import java.lang.ref.WeakReference;
+
 /**
  * <pre>
  *     author : wangmingxing
@@ -8,4 +17,23 @@ package com.blink.live.blinkstreamlib.client;
  * </pre>
  */
 public class StreamClient {
+    private StreamAudioClient streamAudioClient;
+    private StreamVideoClient streamVideoClient;
+    private final Object SyncOp;
+
+    //parameters
+    private StreamCoreParameters coreParameters;
+    private RtmpPusher rtmpPusher;
+    private StreamFlvDataCollecter dataCollecter;
+
+    //判断是否推流
+    private boolean isStreaming = false;
+    private WeakReference<Activity> mActivity;
+
+    public StreamClient(){
+        SyncOp = new Object();
+        coreParameters = new StreamCoreParameters();
+        CallbackDelivery.initInstance();
+    }
+
 }
