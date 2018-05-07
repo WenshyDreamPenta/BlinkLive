@@ -1,7 +1,9 @@
 package com.blink.live.blinkstreamlib.client;
 
 import android.app.Activity;
+import android.content.Context;
 
+import com.blink.live.blinkstreamlib.model.StreamConfig;
 import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
 import com.blink.live.blinkstreamlib.rtmp.RtmpPusher;
 import com.blink.live.blinkstreamlib.rtmp.StreamFlvDataCollecter;
@@ -36,4 +38,13 @@ public class StreamClient {
         CallbackDelivery.initInstance();
     }
 
+    public void setContext(Context context){
+        if(context instanceof Activity){
+            this.mActivity = new WeakReference<>((Activity) context);
+        }
+    }
+
+    public boolean prepare(StreamConfig streamConfig){
+        return false;
+    }
 }
