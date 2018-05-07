@@ -45,6 +45,9 @@ public class StreamClient {
     }
 
     public boolean prepare(StreamConfig streamConfig){
+        synchronized (SyncOp){
+            
+        }
         return false;
     }
 }
