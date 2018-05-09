@@ -2,6 +2,7 @@ package com.blink.live.blinkstreamlib.client;
 
 import android.app.Activity;
 import android.content.Context;
+import android.widget.Toast;
 
 import com.blink.live.blinkstreamlib.model.StreamConfig;
 import com.blink.live.blinkstreamlib.model.StreamCoreParameters;
@@ -73,6 +74,56 @@ public class StreamClient {
             return true;
         }
     }
+
+    //开始推流
+    public void startStreaming(String rtmp){
+        isStreaming = true;
+        synchronized (SyncOp){
+            try{
+                streamVideoClient.startStreaming(dataCollecter);
+                rtmpPusher.start(rtmp == null ? coreParameters.rtmpAddr : rtmp);
+                streamAudioClient.start(dataCollecter);
+            }catch (Exception e){
+                if(mActivity.get() !=null){
+                    Toast.makeText(mActivity.get(),"可能没有权限",Toast.LENGTH_LONG).show();
+                    mActivity.get().finish();
+                }
+            }
+        }
+    }
+
+    //开始推流2
+    public void startStreaming() {
+        isStreaming = true;
+        synchronized (SyncOp) {
+            streamVideoClient.startStreaming(dataCollecter);
+            rtmpPusher.start(coreParameters.rtmpAddr);
+            streamAudioClient.start(dataCollecter);
+        }
+    }
+
+    //停止推流
+    public void stopStreaming(){
+        isStreaming = false;
+        synchronized (SyncOp){
+            streamVideoClient.stopStreaming();
+            streamAudioClient.stop();
+            rtmpPusher.stop();
+        }
+    }
+
+    //销毁
+    public void destroy(){
+        synchronized (SyncOp){
+            rtmpPusher.destroy();
+            streamAudioClient.destroy();
+            streamVideoClient.destroy();
+            rtmpPusher = null;
+            streamVideoClient = null;
+            streamAudioClient = null;
+        }
+    }
+
 
     private void checkDirection(StreamConfig streamConfig){
         int frontFlag = streamConfig.getFrontCameraDirectionMode();
