@@ -2,6 +2,7 @@ package com.blink.live.blinkstreamlib.client;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.widget.Toast;
 
 import com.blink.live.blinkstreamlib.model.StreamConfig;
@@ -17,7 +18,7 @@ import java.lang.ref.WeakReference;
  * <pre>
  *     author : wangmingxing
  *     time   : 2018/4/12
- *     desc   : Stream Client
+ *     desc   : Stream Client Proxy
  * </pre>
  */
 public class StreamClient {
@@ -34,22 +35,22 @@ public class StreamClient {
     private boolean isStreaming = false;
     private WeakReference<Activity> mActivity;
 
-    public StreamClient(){
+    public StreamClient() {
         SyncOp = new Object();
         coreParameters = new StreamCoreParameters();
         CallbackDelivery.initInstance();
     }
 
     //设置弱引用Context
-    public void setContext(Context context){
-        if(context instanceof Activity){
+    public void setContext(Context context) {
+        if (context instanceof Activity) {
             this.mActivity = new WeakReference<>((Activity) context);
         }
     }
 
     //初始化
-    public boolean prepare(StreamConfig streamConfig){
-        synchronized (SyncOp){
+    public boolean prepare(StreamConfig streamConfig) {
+        synchronized (SyncOp) {
             checkDirection(streamConfig);
             coreParameters.filterMode = streamConfig.getFilterMode();
             coreParameters.rtmpAddr = streamConfig.getRtmpAddr();
@@ -57,7 +58,8 @@ public class StreamClient {
             coreParameters.senderQueueLength = 200;//150
             streamVideoClient = new StreamVideoClient(coreParameters);
             streamAudioClient = new StreamAudioClient(coreParameters);
-            if(!streamVideoClient.prepare(streamConfig) || !streamAudioClient.prepare(streamConfig)){
+            if (!streamVideoClient.prepare(streamConfig) ||
+                    !streamAudioClient.prepare(streamConfig)) {
                 return false;
             }
             rtmpPusher = new RtmpPusher();
@@ -65,7 +67,7 @@ public class StreamClient {
             dataCollecter = new StreamFlvDataCollecter() {
                 @Override
                 public void collect(StreamFlvData flvData, int type) {
-                    if(rtmpPusher != null){
+                    if (rtmpPusher != null) {
                         rtmpPusher.feed(flvData, type);
                     }
                 }
@@ -76,16 +78,17 @@ public class StreamClient {
     }
 
     //开始推流
-    public void startStreaming(String rtmp){
+    public void startStreaming(String rtmp) {
         isStreaming = true;
-        synchronized (SyncOp){
-            try{
+        synchronized (SyncOp) {
+            try {
                 streamVideoClient.startStreaming(dataCollecter);
                 rtmpPusher.start(rtmp == null ? coreParameters.rtmpAddr : rtmp);
                 streamAudioClient.start(dataCollecter);
-            }catch (Exception e){
-                if(mActivity.get() !=null){
-                    Toast.makeText(mActivity.get(),"可能没有权限",Toast.LENGTH_LONG).show();
+            }
+            catch (Exception e) {
+                if (mActivity.get() != null) {
+                    Toast.makeText(mActivity.get(), "可能没有权限", Toast.LENGTH_LONG).show();
                     mActivity.get().finish();
                 }
             }
@@ -103,9 +106,9 @@ public class StreamClient {
     }
 
     //停止推流
-    public void stopStreaming(){
+    public void stopStreaming() {
         isStreaming = false;
-        synchronized (SyncOp){
+        synchronized (SyncOp) {
             streamVideoClient.stopStreaming();
             streamAudioClient.stop();
             rtmpPusher.stop();
@@ -113,8 +116,8 @@ public class StreamClient {
     }
 
     //销毁
-    public void destroy(){
-        synchronized (SyncOp){
+    public void destroy() {
+        synchronized (SyncOp) {
             rtmpPusher.destroy();
             streamAudioClient.destroy();
             streamVideoClient.destroy();
@@ -124,8 +127,36 @@ public class StreamClient {
         }
     }
 
+    //开始相机预览
+    public void startPreview(SurfaceTexture surfaceTexture, int visualWidth, int visualHeight) {
+        if (streamVideoClient != null) {
+            streamVideoClient.startPreview(surfaceTexture, visualWidth, visualHeight);
+        }
+    }
 
-    private void checkDirection(StreamConfig streamConfig){
+    //更新预览
+    public void updatePreview(int visualwidth, int visualHeight) {
+        if (streamVideoClient != null) {
+            streamVideoClient.updatePreview(visualwidth, visualHeight);
+        }
+    }
+
+    //停止预览
+    public void stopPreview(boolean releaseTexture) {
+        if (streamVideoClient != null) {
+            streamVideoClient.stopPreview(releaseTexture);
+        }
+    }
+
+    //切换摄像头
+    public boolean swtichCamera(){
+        synchronized (SyncOp){
+            return streamVideoClient.swtichCamera();
+        }
+    }
+
+    //检查方向
+    private void checkDirection(StreamConfig streamConfig) {
         int frontFlag = streamConfig.getFrontCameraDirectionMode();
         int backFlag = streamConfig.getBackCameraDirectionMode();
         int fbit = 0;
