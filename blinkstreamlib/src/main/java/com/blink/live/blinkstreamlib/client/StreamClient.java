@@ -155,6 +155,8 @@ public class StreamClient {
         }
     }
 
+    //todo: to be continue
+
     //检查方向
     private void checkDirection(StreamConfig streamConfig) {
         int frontFlag = streamConfig.getFrontCameraDirectionMode();
